@@ -556,7 +556,8 @@ fun PrescriptionTable(
                 onValueChange = onRightAxisChange,
                 weight = 1f,
                 thickness = thickness,
-                placeholder = "1-180"
+                placeholder = "1-180",
+                keyboardType = KeyboardType.Number
             )
             TableInputCell(
                 value = rightVa,
@@ -592,7 +593,8 @@ fun PrescriptionTable(
                 onValueChange = onLeftAxisChange,
                 weight = 1f,
                 thickness = thickness,
-                placeholder = "1-180"
+                placeholder = "1-180",
+                keyboardType = KeyboardType.Number
             )
             TableInputCell(
                 value = leftVa,
@@ -675,7 +677,8 @@ fun RowScope.TableInputCell(
     weight: Float,
     thickness: Dp,
     placeholder: String = "",
-    isLast: Boolean = false
+    isLast: Boolean = false,
+    keyboardType: KeyboardType= KeyboardType.Unspecified
 ) {
     Box(
         modifier = Modifier
@@ -710,7 +713,10 @@ fun RowScope.TableInputCell(
                     }
                     innerTextField()
                 }
-            }
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType
+            )
         )
     }
 }

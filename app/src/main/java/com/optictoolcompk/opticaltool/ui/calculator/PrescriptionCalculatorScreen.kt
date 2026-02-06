@@ -1,5 +1,6 @@
 package com.optictoolcompk.opticaltool.ui.calculator
 
+//import android.widget.Toast
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +32,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CameraAlt
@@ -48,11 +51,19 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +78,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -99,6 +111,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.optictoolcompk.opticaltool.data.models.CalculationResults
 import com.optictoolcompk.opticaltool.ui.prescriptioncreation.PrescriptionViewModel
+import com.optictoolcompk.opticaltool.ui.prescriptioncreation.addPaddingToImage
 import com.optictoolcompk.opticaltool.utils.PrescriptionCalculator
 import com.optictoolcompk.opticaltool.utils.generateAddValues
 import com.optictoolcompk.opticaltool.utils.generateCylValues
@@ -114,7 +127,6 @@ fun EyePrescriptionCalculatorScreen(
     navController: NavHostController? = null,
     prescriptionViewModel: PrescriptionViewModel = hiltViewModel()
 ) {
-    // Get arguments from NavController
     val navBackStackEntry = navController?.currentBackStackEntry
     val args = navBackStackEntry?.arguments
 
@@ -139,6 +151,7 @@ fun EyePrescriptionCalculatorScreen(
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Trigger calculation if data is passed initially
     LaunchedEffect(args) {
@@ -152,6 +165,24 @@ fun EyePrescriptionCalculatorScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Vision Calculator", fontWeight = FontWeight.ExtraBold)
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController?.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        },
         floatingActionButton = {
             results?.let {
                 var fabMenuExpanded by remember { mutableStateOf(false) }
@@ -186,8 +217,9 @@ fun EyePrescriptionCalculatorScreen(
                                 val uri = saveBitmapToGallery(context, imageBitmap!!)
                                 if (uri != null) {
                                     Toast.makeText(context, "Saved to Gallery!", Toast.LENGTH_SHORT).show()
+                                    fabMenuExpanded = false
                                 }
-                                fabMenuExpanded = false
+
                             }
                         },
                         icon = { Icon(Icons.Default.CameraAlt, "screenshot") },
@@ -209,7 +241,12 @@ fun EyePrescriptionCalculatorScreen(
                                 fabMenuExpanded = false
                             }
                         },
-                        icon = { Icon(imageVector = Icons.Default.Share, contentDescription = "Share") },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share"
+                            )
+                        },
                         text = { Text(text = "Share") }
                     )
 
@@ -217,6 +254,7 @@ fun EyePrescriptionCalculatorScreen(
                         onClick = {
                             scope.launch {
                                 val prescriptionImage = graphicsLayer1.toImageBitmap()
+                                val imageWithPadding = addPaddingToImage(prescriptionImage, 24)
                                 prescriptionViewModel.savePrescription(
                                     patientName = "",
                                     phone = "",
@@ -234,9 +272,10 @@ fun EyePrescriptionCalculatorScreen(
                                     ipdN = "",
                                     ipdD = "",
                                     checkedBy = "",
-                                    image = prescriptionImage.asAndroidBitmap()
+                                    image = imageWithPadding.asAndroidBitmap()
                                 )
-                                Toast.makeText(context, "Prescription Saved", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "Prescription Saved", Toast.LENGTH_LONG)
+                                    .show()
                                 fabMenuExpanded = false
                             }
                         },
@@ -250,33 +289,28 @@ fun EyePrescriptionCalculatorScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F5))
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Calculator",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                fontStyle = FontStyle.Italic,
-                color = Color.White,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Black, RoundedCornerShape(8.dp))
-                    .padding(vertical = 12.dp),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             EyePrescriptionTable(
-                modifier = Modifier.drawWithContent {
-                    graphicsLayer1.record {
-                        this@drawWithContent.drawContent()
-                    }
-                    drawContent()
-                },
+                modifier = Modifier
+                    .drawWithContent {
+                        graphicsLayer1.record {
+                            this@drawWithContent.drawContent()
+                        }
+                        drawContent()
+                    },
                 rightSph = rightSph,
                 onRightSphChange = { rightSph = it },
                 rightCyl = rightCyl,
@@ -304,21 +338,76 @@ fun EyePrescriptionCalculatorScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // RESET BUTTON (Secondary)
+                OutlinedButton(
+                    onClick = {
+                        rightSph = ""; rightCyl = ""; rightAxis = ""
+                        leftSph = ""; leftCyl = ""; leftAxis = ""
+                        add = ""; results = null; rightAxisError = ""; leftAxisError = ""
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(
+                        1.5.dp,
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Reset",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                // CALCULATE BUTTON (Primary)
                 Button(
                     onClick = {
-                        val rightFilled = rightSph.isNotEmpty() || (rightCyl.isNotEmpty() && rightAxis.isNotEmpty())
-                        val leftFilled = leftSph.isNotEmpty() || (leftCyl.isNotEmpty() && leftAxis.isNotEmpty())
+                        val rightFilled =
+                            rightSph.isNotEmpty() || (rightCyl.isNotEmpty() && rightAxis.isNotEmpty())
+                        val leftFilled =
+                            leftSph.isNotEmpty() || (leftCyl.isNotEmpty() && leftAxis.isNotEmpty())
 
                         if (!rightFilled && !leftFilled) {
-                            Toast.makeText(context, "Please fill required values", Toast.LENGTH_LONG).show()
+//                            Toast.makeText(
+//                                context,
+//                                "Please fill required values",
+//                                Toast.LENGTH_LONG
+//                            ).show()
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Please fill required values",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
                             return@Button
                         }
 
                         if (rightAxisError.isNotEmpty() || leftAxisError.isNotEmpty()) {
-                            Toast.makeText(context, "Please fix axis errors", Toast.LENGTH_SHORT).show()
+//                            Toast.makeText(context, "Please fix axis errors", Toast.LENGTH_SHORT)
+//                                .show()
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Please fix axis errors",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
                             return@Button
                         }
 
@@ -328,33 +417,32 @@ fun EyePrescriptionCalculatorScreen(
                             add
                         )
                     },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
-                    shape = RoundedCornerShape(8.dp)
+                    modifier = Modifier
+                        .weight(1.5f) // Slightly wider to emphasize it's the main action
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                 ) {
-                    Icon(Icons.Default.Calculate, null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Calculate", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                }
-
-                Button(
-                    onClick = {
-                        rightSph = ""; rightCyl = ""; rightAxis = ""
-                        leftSph = ""; leftCyl = ""; leftAxis = ""
-                        add = ""; results = null; rightAxisError = ""; leftAxisError = ""
-                    },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF757575)),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Refresh, null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Reset", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Icon(
+                        imageVector = Icons.Default.Calculate,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = "Calculate",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 }
             }
 
             results?.let { calcResults ->
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 ResultsDisplay(
                     modifier = Modifier.drawWithContent {
                         graphicsLayer2.record {
@@ -380,10 +468,17 @@ fun combineLayers(
     val textPadding = 24f
     val width = maxOf(l1.size.width, l2.size.width)
 
-    val textLayout1 = textMeasurer.measure(label1, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp))
-    val textLayout2 = textMeasurer.measure(label2, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp))
+    val textLayout1 = textMeasurer.measure(
+        label1,
+        style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp)
+    )
+    val textLayout2 = textMeasurer.measure(
+        label2,
+        style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp)
+    )
 
-    val totalHeight = l1.size.height + l2.size.height + textLayout1.size.height + textLayout2.size.height + (textPadding * 3)
+    val totalHeight =
+        l1.size.height + l2.size.height + textLayout1.size.height + textLayout2.size.height + (textPadding * 3)
 
     val bitmap = ImageBitmap(width, totalHeight.toInt())
     val canvas = Canvas(bitmap)
@@ -443,7 +538,8 @@ fun shareResultsOnly(context: Context, bitmap: ImageBitmap) {
         bitmap.asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, stream)
         stream.close()
 
-        val contentUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val contentUri =
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, contentUri)
@@ -483,62 +579,153 @@ fun EyePrescriptionTable(
     val sphValues = remember { generateSphValues() }
     val cylValues = remember { generateCylValues() }
     val addValues = remember { generateAddValues() }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .padding(16.dp)
-            .drawBehind {
-                val stroke = thickness.toPx()
-                drawLine(color, Offset(0f, 0f), Offset(size.width, 0f), stroke)
-                drawLine(color, Offset(0f, 0f), Offset(0f, size.height), stroke)
-                drawLine(color, Offset(size.width, 0f), Offset(size.width, size.height), stroke)
-            }
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Row(modifier = Modifier.height(rowHeight)) {
-            LabelCell("", 1f, thickness)
-            LabelCell("SPH", 1f, thickness, isItalic = true)
-            LabelCell("CYL", 1f, thickness, isItalic = true)
-            LabelCell("Axis", 1f, thickness, isItalic = true, isLast = true)
-        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(20.dp)
+                .drawBehind {
+                    val stroke = thickness.toPx()
+                    drawLine(color, Offset(0f, 0f), Offset(size.width, 0f), stroke)
+                    drawLine(color, Offset(0f, 0f), Offset(0f, size.height), stroke)
+                    drawLine(color, Offset(size.width, 0f), Offset(size.width, size.height), stroke)
+                }
+        ) {
+            Row(modifier = Modifier.height(rowHeight)) {
+                LabelCell("", 1f, thickness)
+                LabelCell("SPH", 1f, thickness, isItalic = true)
+                LabelCell("CYL", 1f, thickness, isItalic = true)
+                LabelCell("Axis", 1f, thickness, isItalic = true, isLast = true)
+            }
 
-        Row(modifier = Modifier.height(rowHeight)) {
-            LabelCell("Right", 1f, thickness, isBold = true)
-            DropdownCell(selectedValue = rightSph, onValueChange = onRightSphChange, values = sphValues, weight = 1f, thickness = thickness)
-            DropdownCell(selectedValue = rightCyl, onValueChange = onRightCylChange, values = cylValues, weight = 1f, thickness = thickness)
-            TextFieldCell(value = rightAxis, onValueChange = onRightAxisChange, weight = 1f, thickness = thickness, isError = rightAxisError.isNotEmpty(), isLast = true)
-        }
+            Row(modifier = Modifier.height(rowHeight)) {
+                LabelCell("Right", 1f, thickness, isBold = true)
+                DropdownCell(
+                    selectedValue = rightSph,
+                    onValueChange = onRightSphChange,
+                    values = sphValues,
+                    weight = 1f,
+                    thickness = thickness
+                )
+                DropdownCell(
+                    selectedValue = rightCyl,
+                    onValueChange = onRightCylChange,
+                    values = cylValues,
+                    weight = 1f,
+                    thickness = thickness
+                )
+                TextFieldCell(
+                    value = rightAxis,
+                    onValueChange = onRightAxisChange,
+                    weight = 1f,
+                    thickness = thickness,
+                    isError = rightAxisError.isNotEmpty(),
+                    isLast = true
+                )
+            }
 
-        Row(modifier = Modifier.height(rowHeight)) {
-            LabelCell("Left", 1f, thickness, isBold = true)
-            DropdownCell(selectedValue = leftSph, onValueChange = onLeftSphChange, values = sphValues, weight = 1f, thickness = thickness)
-            DropdownCell(selectedValue = leftCyl, onValueChange = onLeftCylChange, values = cylValues, weight = 1f, thickness = thickness)
-            TextFieldCell(value = leftAxis, onValueChange = onLeftAxisChange, weight = 1f, thickness = thickness, isError = leftAxisError.isNotEmpty(), isLast = true)
-        }
+            Row(modifier = Modifier.height(rowHeight)) {
+                LabelCell("Left", 1f, thickness, isBold = true)
+                DropdownCell(
+                    selectedValue = leftSph,
+                    onValueChange = onLeftSphChange,
+                    values = sphValues,
+                    weight = 1f,
+                    thickness = thickness
+                )
+                DropdownCell(
+                    selectedValue = leftCyl,
+                    onValueChange = onLeftCylChange,
+                    values = cylValues,
+                    weight = 1f,
+                    thickness = thickness
+                )
+                TextFieldCell(
+                    value = leftAxis,
+                    onValueChange = onLeftAxisChange,
+                    weight = 1f,
+                    thickness = thickness,
+                    isError = leftAxisError.isNotEmpty(),
+                    isLast = true
+                )
+            }
 
-        Row(modifier = Modifier.height(rowHeight)) {
-            LabelCell("ADD", 1f, thickness, isBold = true)
-            DropdownCell(selectedValue = add, onValueChange = onAddChange, values = addValues, weight = 3f, thickness = thickness, isLast = true)
+            Row(modifier = Modifier.height(rowHeight)) {
+                LabelCell("ADD", 1f, thickness, isBold = true)
+                DropdownCell(
+                    selectedValue = add,
+                    onValueChange = onAddChange,
+                    values = addValues,
+                    weight = 3f,
+                    thickness = thickness,
+                    isLast = true
+                )
+            }
         }
     }
 }
 
 @Composable
-fun RowScope.LabelCell(text: String, weight: Float, thickness: Dp, isBold: Boolean = false, isItalic: Boolean = false, isLast: Boolean = false) {
-    Box(modifier = Modifier.weight(weight).fillMaxHeight().drawCellLines(thickness, isLast), contentAlignment = Alignment.Center) {
-        Text(text = text, fontSize = 16.sp, fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal, fontStyle = if (isItalic) FontStyle.Italic else FontStyle.Normal)
+fun RowScope.LabelCell(
+    text: String,
+    weight: Float,
+    thickness: Dp,
+    isBold: Boolean = false,
+    isItalic: Boolean = false,
+    isLast: Boolean = false
+) {
+    Box(
+        modifier = Modifier
+            .weight(weight)
+            .fillMaxHeight()
+            .drawCellLines(thickness, isLast),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+            fontStyle = if (isItalic) FontStyle.Italic else FontStyle.Normal,
+            color = Color.Black
+        )
     }
 }
 
 @Composable
-fun RowScope.TextFieldCell(value: String, onValueChange: (String) -> Unit, weight: Float, thickness: Dp, isError: Boolean = false, isLast: Boolean = false) {
-    Box(modifier = Modifier.weight(weight).fillMaxHeight().drawCellLines(thickness, isLast), contentAlignment = Alignment.Center) {
+fun RowScope.TextFieldCell(
+    value: String,
+    onValueChange: (String) -> Unit,
+    weight: Float,
+    thickness: Dp,
+    isError: Boolean = false,
+    isLast: Boolean = false
+) {
+    Box(
+        modifier = Modifier
+            .weight(weight)
+            .fillMaxHeight()
+            .drawCellLines(thickness, isLast),
+        contentAlignment = Alignment.Center
+    ) {
         BasicTextField(
-            value = value, onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-            textStyle = TextStyle(fontSize = 16.sp, textAlign = TextAlign.Center, color = if (isError) Color.Red else Color.Black),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true,
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            textStyle = TextStyle(
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                color = if (isError) Color.Red else Color.Black
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
             decorationBox = { innerTextField ->
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     if (value.isEmpty()) Text(text = "1-180", fontSize = 14.sp, color = Color.Gray)
@@ -550,21 +737,58 @@ fun RowScope.TextFieldCell(value: String, onValueChange: (String) -> Unit, weigh
 }
 
 @Composable
-fun RowScope.DropdownCell(selectedValue: String, onValueChange: (String) -> Unit, values: List<String>, weight: Float, thickness: Dp, isLast: Boolean = false) {
+fun RowScope.DropdownCell(
+    selectedValue: String,
+    onValueChange: (String) -> Unit,
+    values: List<String>,
+    weight: Float,
+    thickness: Dp,
+    isLast: Boolean = false
+) {
     var expanded by remember { mutableStateOf(false) }
     var textButtonWidth by remember { mutableIntStateOf(0) }
-    Box(modifier = Modifier.weight(weight).fillMaxHeight().drawCellLines(thickness, isLast), contentAlignment = Alignment.Center) {
-        TextButton(onClick = { expanded = true }, modifier = Modifier.fillMaxSize().onSizeChanged { textButtonWidth = it.width }, shape = RectangleShape) {
+    Box(
+        modifier = Modifier
+            .weight(weight)
+            .fillMaxHeight()
+            .drawCellLines(thickness, isLast),
+        contentAlignment = Alignment.Center
+    ) {
+        TextButton(
+            onClick = { expanded = true },
+            modifier = Modifier
+                .fillMaxSize()
+                .onSizeChanged { textButtonWidth = it.width },
+            shape = RectangleShape
+        ) {
             val displayValue = if (selectedValue.isNotEmpty()) {
                 val num = selectedValue.toDoubleOrNull() ?: 0.0
                 if (num >= 0) "+$selectedValue" else selectedValue
             } else "0.00"
-            Text(text = displayValue, color = if (selectedValue.isEmpty()) Color.Gray else Color.Black, fontSize = 16.sp)
+            Text(
+                text = displayValue,
+                color = if (selectedValue.isEmpty()) Color.Gray else Color.Black,
+                fontSize = 16.sp
+            )
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.height(250.dp).width(with(LocalDensity.current) { textButtonWidth.toDp() })) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .height(250.dp)
+                .width(with(LocalDensity.current) { textButtonWidth.toDp() }),
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
             values.forEach { selection ->
-                val formattedSelection = if ((selection.toDoubleOrNull() ?: 0.0) >= 0) "+$selection" else selection
-                DropdownMenuItem(text = { Text(text = formattedSelection, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }, onClick = { onValueChange(selection); expanded = false })
+                val formattedSelection =
+                    if ((selection.toDoubleOrNull() ?: 0.0) >= 0) "+$selection" else selection
+                DropdownMenuItem(text = {
+                    Text(
+                        text = formattedSelection,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }, onClick = { onValueChange(selection); expanded = false })
             }
         }
     }
@@ -572,59 +796,148 @@ fun RowScope.DropdownCell(selectedValue: String, onValueChange: (String) -> Unit
 
 fun Modifier.drawCellLines(thickness: Dp, isLastColumn: Boolean): Modifier = this.drawBehind {
     val strokeWidth = thickness.toPx()
-    drawLine(color = Color.Black, start = Offset(0f, size.height), end = Offset(size.width, size.height), strokeWidth = strokeWidth)
-    if (!isLastColumn) drawLine(color = Color.Black, start = Offset(size.width, 0f), end = Offset(size.width, size.height), strokeWidth = strokeWidth)
+    drawLine(
+        color = Color.Black,
+        start = Offset(0f, size.height),
+        end = Offset(size.width, size.height),
+        strokeWidth = strokeWidth
+    )
+    if (!isLastColumn) drawLine(
+        color = Color.Black,
+        start = Offset(size.width, 0f),
+        end = Offset(size.width, size.height),
+        strokeWidth = strokeWidth
+    )
 }
 
 @Composable
 fun ResultsDisplay(modifier: Modifier = Modifier, results: CalculationResults) {
-    Card(modifier = modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(8.dp)) {
-        Column(modifier = Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(modifier = Modifier.border(2.dp, Color.Black, RoundedCornerShape(50)).padding(horizontal = 32.dp, vertical = 8.dp)) {
-                Text(text = "Distance", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic)
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .border(2.dp, Color.Black, RoundedCornerShape(50))
+                    .padding(horizontal = 32.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Distance",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontStyle = FontStyle.Italic,
+                    color = Color.Black
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
             results.right?.let { right ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Right:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(text = "Right:", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
                     Column {
-                        Text(text = right.finalDistance, modifier = Modifier.padding(start = 24.dp, top = 0.dp), fontSize = 15.sp)
-                        right.transposedDistance?.let { Text(text = it, modifier = Modifier.padding(start = 24.dp, top = 2.dp), fontSize = 15.sp) }
+                        Text(
+                            text = right.finalDistance,
+                            modifier = Modifier.padding(start = 24.dp, top = 0.dp),
+                            fontSize = 15.sp,
+                            color = Color.Black
+                        )
+                        right.transposedDistance?.let {
+                            Text(
+                                text = it,
+                                modifier = Modifier.padding(start = 24.dp, top = 2.dp),
+                                fontSize = 15.sp,
+                                color = Color.Black
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
             results.left?.let { left ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Left:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(text = "Left:", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
                     Column {
-                        Text(text = left.finalDistance, modifier = Modifier.padding(start = 24.dp, top = 0.dp), fontSize = 15.sp)
-                        left.transposedDistance?.let { Text(text = it, modifier = Modifier.padding(start = 24.dp, top = 2.dp), fontSize = 15.sp) }
+                        Text(
+                            text = left.finalDistance,
+                            modifier = Modifier.padding(start = 24.dp, top = 0.dp),
+                            fontSize = 15.sp,
+                            color = Color.Black
+                        )
+                        left.transposedDistance?.let {
+                            Text(
+                                text = it,
+                                modifier = Modifier.padding(start = 24.dp, top = 2.dp),
+                                fontSize = 15.sp,
+                                color = Color.Black
+                            )
+                        }
                     }
                 }
             }
             if (results.right?.finalNear != null || results.left?.finalNear != null) {
                 Spacer(modifier = Modifier.height(24.dp))
-                Box(modifier = Modifier.border(2.dp, Color.Black, RoundedCornerShape(50)).padding(horizontal = 32.dp, vertical = 8.dp)) {
-                    Text(text = "Near", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic)
+                Box(
+                    modifier = Modifier
+                        .border(2.dp, Color.Black, RoundedCornerShape(50))
+                        .padding(horizontal = 32.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "Near",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontStyle = FontStyle.Italic,
+                        color = Color.Black
+                    )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 results.right?.finalNear?.let { nearResult ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Right:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(text = "Right:", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
                         Column {
-                            Text(text = nearResult, modifier = Modifier.padding(start = 24.dp, top = 0.dp), fontSize = 15.sp)
-                            results.right.transposedNear?.let { Text(text = it, modifier = Modifier.padding(start = 24.dp, top = 2.dp), fontSize = 15.sp) }
+                            Text(
+                                text = nearResult,
+                                modifier = Modifier.padding(start = 24.dp, top = 0.dp),
+                                fontSize = 15.sp,
+                                color=Color.Black
+                            )
+                            results.right.transposedNear?.let {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier.padding(start = 24.dp, top = 2.dp),
+                                    fontSize = 15.sp,
+                                    color = Color.Black
+                                )
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 results.left?.finalNear?.let { nearResult ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Left:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(text = "Left:", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
                         Column {
-                            Text(text = nearResult, modifier = Modifier.padding(start = 24.dp, top = 0.dp), fontSize = 15.sp)
-                            results.left.transposedNear?.let { Text(text = it, modifier = Modifier.padding(start = 24.dp, top = 2.dp), fontSize = 15.sp) }
+                            Text(
+                                text = nearResult,
+                                modifier = Modifier.padding(start = 24.dp, top = 0.dp),
+                                fontSize = 15.sp,
+                                color = Color.Black
+                            )
+                            results.left.transposedNear?.let {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier.padding(start = 24.dp, top = 2.dp),
+                                    fontSize = 15.sp,
+                                    color = Color.Black
+                                )
+                            }
                         }
                     }
                 }

@@ -7,9 +7,20 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,9 +29,37 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -37,12 +76,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.optictoolcompk.opticaltool.data.models.*
-import com.optictoolcompk.opticaltool.ui.prescriptioncreation.*
+import com.optictoolcompk.opticaltool.data.models.Bill
+import com.optictoolcompk.opticaltool.data.models.BillDisplaySettings
+import com.optictoolcompk.opticaltool.data.models.BillItem
+import com.optictoolcompk.opticaltool.data.models.PrescriptionEntity
+import com.optictoolcompk.opticaltool.data.models.PrescriptionFormDataForBill
+import com.optictoolcompk.opticaltool.ui.prescriptioncreation.PrescriptionHeader
+import com.optictoolcompk.opticaltool.ui.prescriptioncreation.PrescriptionTable
+import com.optictoolcompk.opticaltool.ui.prescriptioncreation.SmallField
+import com.optictoolcompk.opticaltool.ui.prescriptioncreation.addPaddingToImage
+import com.optictoolcompk.opticaltool.ui.prescriptioncreation.getCurrentDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -60,6 +106,7 @@ fun BillCreationScreen(
     val displaySettings by viewModel.displaySettings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(billId) {
         if (billId != null && billId > 0) {
@@ -94,168 +141,160 @@ fun BillCreationScreen(
         }
     }
 
-    if (uiState.initialLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator()
-                Spacer(Modifier.height(16.dp))
-                Text("Loading bill details...", style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-    } else {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(if (uiState.isEditMode) "Edit Bill" else "Create Bill") },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.AutoMirrored.Default.ArrowBack, "Back")
-                        }
-                    },
-                    actions = {
-                        TextButton(
-                            onClick = { viewModel.saveBill() },
-                            enabled = !uiState.isSaving
-                        ) {
-                            if (uiState.isSaving) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text("SAVE")
-                            }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (uiState.isEditMode) "Edit Bill" else "Create Bill") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = { viewModel.saveBill() },
+                        enabled = !uiState.isSaving
+                    ) {
+                        if (uiState.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("SAVE")
                         }
                     }
+                }
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Invoice Info
+            InvoiceInfoCard(
+                invoiceNumber = uiState.invoiceNumber,
+                invoiceDate = uiState.invoiceDate,
+                invoiceTime = uiState.invoiceTime,
+                shopName = shopSettings.shopName,
+                shopAddress = shopSettings.shopAddress,
+                shopPhone = shopSettings.shopPhone
+            )
+
+            // Customer Info
+            CustomerInfoCard(
+                name = uiState.customerName,
+                onNameChange = { viewModel.onCustomerNameChanged(it) },
+                phone = uiState.customerPhone,
+                onPhoneChange = { viewModel.onCustomerPhoneChanged(it) },
+                city = uiState.customerCity,
+                onCityChange = { viewModel.onCustomerCityChanged(it) }
+            )
+
+            // Items Section
+            Text(
+                "Items",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            uiState.items.forEachIndexed { index, item ->
+                BillItemCard(
+                    item = item,
+                    currency = shopSettings.currency,
+                    onItemChange = { viewModel.onItemChanged(index, it) },
+                    onRemove = { viewModel.onRemoveItem(index) }
                 )
             }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+
+            OutlinedButton(
+                onClick = { viewModel.onAddItem() },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Invoice Info
-                InvoiceInfoCard(
-                    invoiceNumber = uiState.invoiceNumber,
-                    invoiceDate = uiState.invoiceDate,
-                    invoiceTime = uiState.invoiceTime,
-                    shopName = shopSettings.shopName,
-                    shopAddress = shopSettings.shopAddress,
-                    shopPhone = shopSettings.shopPhone
+                Icon(Icons.Default.Add, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Add Item")
+            }
+
+            // --- SEPARATED PRESCRIPTION SECTIONS ---
+
+            // 1. Add New Prescription Section (Conditional)
+            if (displaySettings.showPrescription) {
+                AddNewPrescriptionSection(
+                    prescriptionFormData = uiState.prescriptionFormData,
+                    onCreateNewClick = { viewModel.onShowPrescriptionOptionsDialog() },
+                    onRemovePrescription = { viewModel.onClearPrescriptionForm() },
+                    isFormVisible = uiState.showPrescriptionFormCard
                 )
 
-                // Customer Info
-                CustomerInfoCard(
-                    name = uiState.customerName,
-                    onNameChange = { viewModel.onCustomerNameChanged(it) },
-                    phone = uiState.customerPhone,
-                    onPhoneChange = { viewModel.onCustomerPhoneChanged(it) },
-                    city = uiState.customerCity,
-                    onCityChange = { viewModel.onCustomerCityChanged(it) }
-                )
-
-                // Items Section
-                Text(
-                    "Items",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                uiState.items.forEachIndexed { index, item ->
-                    BillItemCard(
-                        item = item,
-                        currency = shopSettings.currency,
-                        onItemChange = { viewModel.onItemChanged(index, it) },
-                        onRemove = { viewModel.onRemoveItem(index) }
+                // Inline Prescription Form Card (if visible)
+                if (uiState.showPrescriptionFormCard) {
+                    PrescriptionFormCard(
+                        formData = uiState.prescriptionFormInputs,
+                        onFormDataChange = { viewModel.onPrescriptionFormInputChanged(it) },
+                        onDismiss = { viewModel.onHidePrescriptionForm() },
+                        displaySettings = displaySettings,
+                        shouldTriggerCapture = uiState.shouldTriggerCapture,
+                        onCaptureComplete = { bitmap ->
+                            viewModel.onSavePrescriptionForm(context, bitmap)
+                        }
                     )
                 }
+            }
 
-                OutlinedButton(
-                    onClick = { viewModel.onAddItem() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Add, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Add Item")
-                }
+            // 2. Search Saved Prescriptions Section (Permanent)
+            SearchSavedPrescriptionsSection(
+                prescriptionImages = uiState.prescriptionImagesPaths,
+                onSearchSavedClick = { viewModel.onShowPrescriptionSearchDialog() },
+                onRemoveImage = { index -> viewModel.onRemovePrescriptionImage(index) }
+            )
 
-                // --- SEPARATED PRESCRIPTION SECTIONS ---
+            SearchUnpaidBillsCard(onClick = { viewModel.onShowUnpaidBillsDialog() })
 
-                // 1. Add New Prescription Section (Conditional)
-                if (displaySettings.showPrescription) {
-                    AddNewPrescriptionSection(
-                        prescriptionFormData = uiState.prescriptionFormData,
-                        onCreateNewClick = { viewModel.onShowPrescriptionOptionsDialog() },
-                        onRemovePrescription = { viewModel.onClearPrescriptionForm() },
-                        isFormVisible = uiState.showPrescriptionFormCard
-                    )
+            // Totals
+            TotalsCard(
+                totalAmount = uiState.totalAmount,
+                discount = uiState.discount,
+                onDiscountChange = { viewModel.onDiscountChanged(it) },
+                advance = uiState.advance,
+                onAdvanceChange = { viewModel.onAdvanceChanged(it) },
+                advance2 = uiState.advance2,
+                onAdvance2Change = { viewModel.onAdvance2Changed(it) },
+                advance2Date = uiState.advance2Date,
+                advance3 = uiState.advance3,
+                onAdvance3Change = { viewModel.onAdvance3Changed(it) },
+                advance3Date = uiState.advance3Date,
+                previousAmount = uiState.previousAmount.toString(),
+                remainingAmount = uiState.remainingAmount,
+                remainingNote = uiState.remainingNote,
+                currency = shopSettings.currency
+            )
 
-                    // Inline Prescription Form Card (if visible)
-                    if (uiState.showPrescriptionFormCard) {
-                        PrescriptionFormCard(
-                            formData = uiState.prescriptionFormInputs,
-                            onFormDataChange = { viewModel.onPrescriptionFormInputChanged(it) },
-                            onDismiss = { viewModel.onHidePrescriptionForm() },
-                            displaySettings = displaySettings,
-                            shouldTriggerCapture = uiState.shouldTriggerCapture,
-                            onCaptureComplete = { bitmap ->
-                                viewModel.onSavePrescriptionForm(context, bitmap)
-                            }
-                        )
-                    }
-                }
+            PickupDateCard(
+                pickupDate = uiState.pickupDate,
+                onChange = { viewModel.onPickupDateChanged(it) }
+            )
 
-                // 2. Search Saved Prescriptions Section (Permanent)
-                SearchSavedPrescriptionsSection(
-                    prescriptionImages = uiState.prescriptionImagesPaths,
-                    onSearchSavedClick = { viewModel.onShowPrescriptionSearchDialog() },
-                    onRemoveImage = { index -> viewModel.onRemovePrescriptionImage(index) }
-                )
-
-                SearchUnpaidBillsCard(onClick = { viewModel.onShowUnpaidBillsDialog() })
-
-                // Totals
-                TotalsCard(
-                    totalAmount = uiState.totalAmount,
-                    discount = uiState.discount,
-                    onDiscountChange = { viewModel.onDiscountChanged(it) },
-                    advance = uiState.advance,
-                    onAdvanceChange = { viewModel.onAdvanceChanged(it) },
-                    advance2 = uiState.advance2,
-                    onAdvance2Change = { viewModel.onAdvance2Changed(it) },
-                    advance2Date = uiState.advance2Date,
-                    advance3 = uiState.advance3,
-                    onAdvance3Change = { viewModel.onAdvance3Changed(it) },
-                    advance3Date = uiState.advance3Date,
-                    previousAmount = uiState.previousAmount.toString(),
-                    remainingAmount = uiState.remainingAmount,
-                    remainingNote = uiState.remainingNote,
-                    currency = shopSettings.currency
-                )
-
-                PickupDateCard(
-                    pickupDate = uiState.pickupDate,
-                    onChange = { viewModel.onPickupDateChanged(it) }
-                )
-
-                if (displaySettings.showUploadCaptureImages) {
-                    ImagesCard(
-                        imagePaths = uiState.imagePaths,
-                        isUploading = uiState.isUploadingImages,
-                        onAdd = { imagePickerLauncher.launch("image/*") },
-                        onRemove = { viewModel.onImageRemoved(it) }
-                    )
-                }
-
-                DisplaySettingsCard(
-                    settings = displaySettings,
-                    onChange = { viewModel.onDisplaySettingsChanged(it) }
+            if (displaySettings.showUploadCaptureImages) {
+                ImagesCard(
+                    imagePaths = uiState.imagePaths,
+                    isUploading = uiState.isUploadingImages,
+                    onAdd = { imagePickerLauncher.launch("image/*") },
+                    onRemove = { viewModel.onImageRemoved(it) }
                 )
             }
+
+            DisplaySettingsCard(
+                settings = displaySettings,
+                onChange = { viewModel.onDisplaySettingsChanged(it) }
+            )
         }
     }
 
@@ -305,7 +344,11 @@ fun BillCreationScreen(
 
     uiState.error?.let { error ->
         LaunchedEffect(error) {
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+//            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            snackbarHostState.showSnackbar(
+                message = error,
+                duration = SnackbarDuration.Short
+            )
             viewModel.clearError()
         }
     }
@@ -482,7 +525,7 @@ fun PrescriptionFormCard(
             delay(100) // Ensure layout is settled
             if (graphicsLayer.size.width > 0 && graphicsLayer.size.height > 0) {
                 val bitmap = graphicsLayer.toImageBitmap()
-                val imageWithPadding=addPaddingToImage(bitmap, paddingPx = 24)
+                val imageWithPadding = addPaddingToImage(bitmap, paddingPx = 24)
                 onCaptureComplete(imageWithPadding.asAndroidBitmap())
             }
         }

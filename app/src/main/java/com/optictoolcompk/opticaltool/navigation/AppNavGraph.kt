@@ -1,17 +1,25 @@
 package com.optictoolcompk.opticaltool.navigation
 
 
-import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -39,6 +47,7 @@ import com.optictoolcompk.opticaltool.ui.profile.ProfileScreen
 import com.optictoolcompk.opticaltool.ui.shopdashboard.ShopDashboardScreen
 import com.optictoolcompk.opticaltool.ui.splash.SplashScreen
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavGraph(
     authViewModel: AuthViewModel = hiltViewModel(),
@@ -75,38 +84,49 @@ fun AppNavGraph(
 
     InitialStateEffect(authState, navController)
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
 
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Splash.route,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(Screen.Splash.route) {
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Splash.route,
+    ) {
+        composable(Screen.Splash.route) {
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { _ ->
                 SplashScreen()
             }
+        }
 
-            composable(Screen.SignIn.route) {
+        composable(Screen.SignIn.route) {
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { _ ->
                 SignInScreen(
                     onSignUpClick = { navController.navigate(Screen.SignUp.route) },
                     onForgotPasswordClick = { navController.navigate(Screen.RequestReset.route) },
                     authViewModel = authViewModel
                 )
             }
+        }
 
-            composable(Screen.SignUp.route) {
+        composable(Screen.SignUp.route) {
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { _ ->
                 SignUpScreen(
                     onBack = { navController.popBackStack() },
                     authViewModel = authViewModel
                 )
             }
-            composable(
-                route = Screen.ConfirmEmail.route,
-                arguments = listOf(navArgument("email") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val email = backStackEntry.arguments?.getString("email")!!
+        }
+        composable(
+            route = Screen.ConfirmEmail.route,
+            arguments = listOf(navArgument("email") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email")!!
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { _ ->
                 ConfirmEmailScreen(
                     email = email,
                     onBackToLogin = {
@@ -119,7 +139,11 @@ fun AppNavGraph(
                     authViewModel = authViewModel
                 )
             }
-            composable(Screen.RequestReset.route) {
+        }
+        composable(Screen.RequestReset.route) {
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { _ ->
                 ForgotPasswordScreen(
                     authViewModel,
                     onBackToLogin = {
@@ -127,11 +151,15 @@ fun AppNavGraph(
                     }
                 )
             }
-            composable(
-                route = Screen.RecoveryOtpVerf.route,
-                arguments = listOf(navArgument("email") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val email = backStackEntry.arguments?.getString("email")!!
+        }
+        composable(
+            route = Screen.RecoveryOtpVerf.route,
+            arguments = listOf(navArgument("email") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email")!!
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { _ ->
                 OtpVerificationScreen(
                     email = email,
                     authViewModel = authViewModel,
@@ -140,116 +168,137 @@ fun AppNavGraph(
                     }
                 )
             }
-            composable(Screen.NewPassword.route) {
+        }
+        composable(Screen.NewPassword.route) {
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) { _ ->
                 NewPasswordScreen(authViewModel)
             }
-            composable(Screen.Profile.route) {
-                ProfileScreen(
-                    authViewModel = authViewModel
-                )
-            }
-
-//            feature composable
-
-
-            composable(Screen.HomeScreen.route) {
-                HomeScreen(
-                    onNavigateToCalculator = { navController.navigate(Screen.CalculatorScreen.route) },
-                    onNavigateToPrescriptions = { navController.navigate(Screen.PrescriptionListScreen.route) },
-                    onNavigateToBillBook = { navController.navigate(Screen.BillBookHomeScreen.route) },
-                    onNavigateToNotebook = { navController.navigate(Screen.GlassesNotebookScreen.route) },
-                    onNavigateToShopSetting = { navController.navigate(Screen.ShopDashboardScreen.route) },
-                    onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
-                )
-            }
-
-            composable(
-                route = Screen.CalculatorScreen.routeWithArgs,
-                arguments = Screen.CalculatorScreen.arguments
-            ) {
-                EyePrescriptionCalculatorScreen(navController = navController)
-            }
-
-            composable(Screen.PrescriptionListScreen.route) {
-                PrescriptionListScreen(
-                    onCreateNewPrescription = { navController.navigate(Screen.AddPrescriptionScreen.route) },
-                    onEditPrescription = { pres ->
-                        navController.navigate(Screen.AddPrescriptionScreen.createRouteWithId(pres.id))
-                    },
-                    onCalculateTranspose = { pres ->
-                        navController.navigate(
-                            Screen.CalculatorScreen.createRoute(
-                                rightSph = pres.rightSph,
-                                rightCyl = pres.rightCyl,
-                                rightAxis = pres.rightAxis,
-                                leftSph = pres.leftSph,
-                                leftCyl = pres.leftCyl,
-                                leftAxis = pres.leftAxis,
-                                add = pres.addPower
-                            )
-                        )
-                    }
-                )
-            }
-
-            composable(Screen.AddPrescriptionScreen.route) {
-                PrescriptionFormScreen(navController = navController)
-            }
-
-            composable(
-                route = Screen.AddPrescriptionScreen.routeWithArgs,
-                arguments = listOf(navArgument("prescriptionId") {
-                    type = NavType.LongType
-                })
-            ) {
-                PrescriptionFormScreen(navController = navController)
-            }
-
-            composable(Screen.BillBookHomeScreen.route) {
-                MyBillsScreen(
-                    onNavigateToBillCreation = { navController.navigate(Screen.BillCreationScreen.route) },
-                    onNavigateToEditBill = { billId ->
-                        navController.navigate(
-                            Screen.BillCreationScreen.createRouteWithId(
-                                billId
-                            )
-                        )
-                    },
-                    onNavigateToShopDashboard = { navController.navigate(Screen.ShopDashboardScreen.route) }
-                )
-            }
-
-            composable(Screen.BillCreationScreen.route) {
-                BillCreationScreen(onNavigateBack = { navController.popBackStack() })
-            }
-
-            composable(
-                route = Screen.BillCreationScreen.routeWithArgs,
-                arguments = listOf(navArgument("billId") {
-                    type = NavType.LongType; defaultValue = 0L
-                })
-            ) { backStackEntry ->
-                val billId = backStackEntry.arguments?.getLong("billId")
-                BillCreationScreen(
-                    billId = if (billId == 0L) null else billId,
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Screen.ShopDashboardScreen.route) {
-                ShopDashboardScreen(onNavigateBack = { navController.popBackStack() })
-            }
-
-            composable(Screen.GlassesNotebookScreen.route) {
-                GlassesNotebookScreen()
-            }
-
-
         }
+        composable(Screen.Profile.route) {
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Profile", fontWeight = FontWeight.ExtraBold) },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
+            ) { padding ->
+                ProfileScreen(
+                    authViewModel = authViewModel,
+                    padding=padding
+                )
+            }
+        }
+
+//            features composable
+        composable(Screen.HomeScreen.route) {
+            HomeScreen(
+                onNavigateToCalculator = { navController.navigate(Screen.CalculatorScreen.route) },
+                onNavigateToPrescriptions = { navController.navigate(Screen.PrescriptionListScreen.route) },
+                onNavigateToBillBook = { navController.navigate(Screen.BillBookHomeScreen.route) },
+                onNavigateToNotebook = { navController.navigate(Screen.GlassesNotebookScreen.route) },
+                onNavigateToShopSetting = { navController.navigate(Screen.ShopDashboardScreen.route) },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
+            )
+        }
+
+        composable(
+            route = Screen.CalculatorScreen.routeWithArgs,
+            arguments = Screen.CalculatorScreen.arguments
+        ) {
+            EyePrescriptionCalculatorScreen(navController = navController)
+        }
+
+        composable(Screen.PrescriptionListScreen.route) {
+            PrescriptionListScreen(
+                onCreateNewPrescription = { navController.navigate(Screen.AddPrescriptionScreen.route) },
+                onEditPrescription = { pres ->
+                    navController.navigate(Screen.AddPrescriptionScreen.createRouteWithId(pres.id))
+                },
+                onCalculateTranspose = { pres ->
+                    navController.navigate(
+                        Screen.CalculatorScreen.createRoute(
+                            rightSph = pres.rightSph,
+                            rightCyl = pres.rightCyl,
+                            rightAxis = pres.rightAxis,
+                            leftSph = pres.leftSph,
+                            leftCyl = pres.leftCyl,
+                            leftAxis = pres.leftAxis,
+                            add = pres.addPower
+                        )
+                    )
+                }
+            )
+        }
+
+        composable(Screen.AddPrescriptionScreen.route) {
+            PrescriptionFormScreen(navController = navController)
+        }
+
+        composable(
+            route = Screen.AddPrescriptionScreen.routeWithArgs,
+            arguments = listOf(navArgument("prescriptionId") {
+                type = NavType.LongType
+            })
+        ) {
+            PrescriptionFormScreen(navController = navController)
+        }
+
+        composable(Screen.BillBookHomeScreen.route) {
+            MyBillsScreen(
+                onNavigateToBillCreation = { navController.navigate(Screen.BillCreationScreen.route) },
+                onNavigateToEditBill = { billId ->
+                    navController.navigate(
+                        Screen.BillCreationScreen.createRouteWithId(
+                            billId
+                        )
+                    )
+                },
+                onNavigateToShopDashboard = { navController.navigate(Screen.ShopDashboardScreen.route) }
+            )
+        }
+
+        composable(Screen.BillCreationScreen.route) {
+            BillCreationScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Screen.BillCreationScreen.routeWithArgs,
+            arguments = listOf(navArgument("billId") {
+                type = NavType.LongType; defaultValue = 0L
+            })
+        ) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getLong("billId")
+            BillCreationScreen(
+                billId = if (billId == 0L) null else billId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ShopDashboardScreen.route) {
+            ShopDashboardScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(Screen.GlassesNotebookScreen.route) {
+            GlassesNotebookScreen()
+        }
+
+
     }
-
-
 }
+//}
 
 @Composable
 private fun InitialStateEffect(

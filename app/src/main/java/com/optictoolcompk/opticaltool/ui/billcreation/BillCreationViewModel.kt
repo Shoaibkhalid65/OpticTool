@@ -606,6 +606,14 @@ class BillCreationViewModel @Inject constructor(
                     return@launch
                 }
 
+                // Validation for prescription form if it's shown
+                if (_uiState.value.showPrescriptionFormCard) {
+                    if (_uiState.value.prescriptionFormInputs.patientName.isBlank()) {
+                        _uiState.update { it.copy(error = "Patient name on prescription is required") }
+                        return@launch
+                    }
+                }
+
                 // If form is visible, we need to capture it first
                 if (_uiState.value.showPrescriptionFormCard) {
                     _uiState.update { it.copy(shouldTriggerCapture = true) }
