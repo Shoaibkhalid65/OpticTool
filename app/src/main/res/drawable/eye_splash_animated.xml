@@ -1,0 +1,12 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/eye_splash_vector">
+    <target
+        android:name="eye_outline"
+        android:animation="@animator/eye_outline_anim" />
+    <target
+        android:name="pupil"
+        android:animation="@animator/pupil_anim" />
+    <target
+        android:name="root_group"
+        android:animation="@animator/scale_anim" />
+</animated-vector>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- For shared images in cache directory -->
+    <cache-path name="shared_images" path="shared_images/" />
+
+    <!-- For camera captured images in cache directory -->
+    <cache-path name="camera_images" path="." />
+
+    <!-- For prescription images in internal storage -->
+    <files-path name="prescriptions" path="prescriptions/" />
+
+    <!-- External storage (if needed) -->
+    <external-path name="external_files" path="." />
+
+    <!-- For bill book section -->
+    <cache-path name="bill_pdfs" path="." />
+    <files-path name="bill_images" path="bill_images/" />
+
+    <!-- NEW: For enhanced receipt generator -->
+    <cache-path name="cached_files" path="." />
+    <files-path name="files" path="." />
+    <external-files-path name="external_files_alt" path="." />
+    <external-path name="external" path="." />
+</paths>
