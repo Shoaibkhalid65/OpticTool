@@ -4,10 +4,10 @@ package com.optictoolcompk.opticaltool.data.auth
 import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
-import com.optictoolcompk.opticaltool.R
-import com.optictoolcompk.opticaltool.di.ApplicationScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.optictoolcompk.opticaltool.R
+import com.optictoolcompk.opticaltool.di.ApplicationScope
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.exception.AuthRestException
@@ -16,6 +16,7 @@ import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.exceptions.HttpRequestException
 import io.github.jan.supabase.exceptions.RestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
@@ -29,8 +30,6 @@ import kotlinx.serialization.json.buildJsonObject
 import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
-import dagger.hilt.android.qualifiers.ApplicationContext
-import io.github.jan.supabase.auth.user.UserInfo
 
 class AuthRepository @Inject constructor(
     private val auth: Auth,
@@ -80,7 +79,7 @@ class AuthRepository @Inject constructor(
     }
 
     //    we use it when we have to verify the otp send to the email to verify the sign up
-    suspend fun verifyEmailOtp(otp: String, emailValue: String){
+    suspend fun verifyEmailOtp(otp: String, emailValue: String) {
         try {
             auth.verifyEmailOtp(
                 type = OtpType.Email.SIGNUP,
@@ -119,7 +118,7 @@ class AuthRepository @Inject constructor(
 
     //   we use it when we have to send the reset password request for the given email
 //    it will send an opt to the given email
-    suspend fun resetPasswordForEmail(emailValue: String){
+    suspend fun resetPasswordForEmail(emailValue: String) {
         try {
             auth.resetPasswordForEmail(
                 email = emailValue
@@ -130,7 +129,7 @@ class AuthRepository @Inject constructor(
     }
 
     // we will use this function when we want to verify the otp that we is used to request to reset the password
-    suspend fun verifyEmailOtpForPasswordRecovery(emailValue: String, otp: String){
+    suspend fun verifyEmailOtpForPasswordRecovery(emailValue: String, otp: String) {
         try {
             auth.verifyEmailOtp(
                 type = OtpType.Email.RECOVERY,
@@ -203,7 +202,7 @@ class AuthRepository @Inject constructor(
         return auth.currentUserOrNull()
     }
 
-    suspend fun signOut(){
+    suspend fun signOut() {
         try {
             auth.signOut()
         } catch (e: Exception) {

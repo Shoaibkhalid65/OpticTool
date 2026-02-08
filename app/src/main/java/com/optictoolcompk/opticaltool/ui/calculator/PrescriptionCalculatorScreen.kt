@@ -1,6 +1,5 @@
 package com.optictoolcompk.opticaltool.ui.calculator
 
-//import android.widget.Toast
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -52,6 +51,7 @@ import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -61,10 +61,12 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -74,6 +76,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -169,7 +172,10 @@ fun EyePrescriptionCalculatorScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Vision Calculator", fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        "Vision Calculator",
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController?.popBackStack() }) {
@@ -192,12 +198,18 @@ fun EyePrescriptionCalculatorScreen(
                     button = {
                         ToggleFloatingActionButton(
                             checked = fabMenuExpanded,
-                            onCheckedChange = { fabMenuExpanded = !fabMenuExpanded }
+                            onCheckedChange = { fabMenuExpanded = !fabMenuExpanded },
+                            containerColor = ToggleFloatingActionButtonDefaults.containerColor(
+                                initialColor = MaterialTheme.colorScheme.primary,
+                                finalColor = MaterialTheme.colorScheme.secondary
+                            ),
+
                         ) {
+                            val color= MaterialTheme.colorScheme.surface
                             Icon(
                                 imageVector = if (fabMenuExpanded) Icons.Filled.Close else Icons.Filled.Add,
                                 contentDescription = null,
-                                modifier = Modifier.animateIcon({ checkedProgress })
+                                modifier = Modifier.animateIcon({ checkedProgress }, color = { color }),
                             )
                         }
                     }
@@ -219,7 +231,6 @@ fun EyePrescriptionCalculatorScreen(
                                     Toast.makeText(context, "Saved to Gallery!", Toast.LENGTH_SHORT).show()
                                     fabMenuExpanded = false
                                 }
-
                             }
                         },
                         icon = { Icon(Icons.Default.CameraAlt, "screenshot") },
@@ -385,11 +396,6 @@ fun EyePrescriptionCalculatorScreen(
                             leftSph.isNotEmpty() || (leftCyl.isNotEmpty() && leftAxis.isNotEmpty())
 
                         if (!rightFilled && !leftFilled) {
-//                            Toast.makeText(
-//                                context,
-//                                "Please fill required values",
-//                                Toast.LENGTH_LONG
-//                            ).show()
                             scope.launch {
                                 snackbarHostState.showSnackbar(
                                     message = "Please fill required values",
@@ -400,8 +406,6 @@ fun EyePrescriptionCalculatorScreen(
                         }
 
                         if (rightAxisError.isNotEmpty() || leftAxisError.isNotEmpty()) {
-//                            Toast.makeText(context, "Please fix axis errors", Toast.LENGTH_SHORT)
-//                                .show()
                             scope.launch {
                                 snackbarHostState.showSnackbar(
                                     message = "Please fix axis errors",
@@ -418,14 +422,14 @@ fun EyePrescriptionCalculatorScreen(
                         )
                     },
                     modifier = Modifier
-                        .weight(1.5f) // Slightly wider to emphasize it's the main action
+                        .weight(1.5f)
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Calculate,
@@ -572,100 +576,111 @@ fun EyePrescriptionTable(
     rightAxisError: String,
     leftAxisError: String,
 ) {
-    val thickness = 3.dp
-    val color = Color.Black
-    val rowHeight = 60.dp
+    val thickness = 2.dp
+    val color = Color(0xFF333333)
+    val rowHeight = 56.dp
 
     val sphValues = remember { generateSphValues() }
     val cylValues = remember { generateCylValues() }
     val addValues = remember { generateAddValues() }
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
                 .padding(20.dp)
-                .drawBehind {
-                    val stroke = thickness.toPx()
-                    drawLine(color, Offset(0f, 0f), Offset(size.width, 0f), stroke)
-                    drawLine(color, Offset(0f, 0f), Offset(0f, size.height), stroke)
-                    drawLine(color, Offset(size.width, 0f), Offset(size.width, size.height), stroke)
-                }
         ) {
-            Row(modifier = Modifier.height(rowHeight)) {
-                LabelCell("", 1f, thickness)
-                LabelCell("SPH", 1f, thickness, isItalic = true)
-                LabelCell("CYL", 1f, thickness, isItalic = true)
-                LabelCell("Axis", 1f, thickness, isItalic = true, isLast = true)
-            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(thickness, color, RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(12.dp))
+            ) {
+                // Header Row
+                Row(
+                    modifier = Modifier
+                        .height(rowHeight)
+                        .background(Color(0xFFF5F5F5))
+                ) {
+                    LabelCell("", 1f, thickness)
+                    LabelCell("SPH", 1f, thickness, isItalic = true)
+                    LabelCell("CYL", 1f, thickness, isItalic = true)
+                    LabelCell("Axis", 1f, thickness, isLast = true)
+                }
 
-            Row(modifier = Modifier.height(rowHeight)) {
-                LabelCell("Right", 1f, thickness, isBold = true)
-                DropdownCell(
-                    selectedValue = rightSph,
-                    onValueChange = onRightSphChange,
-                    values = sphValues,
-                    weight = 1f,
-                    thickness = thickness
-                )
-                DropdownCell(
-                    selectedValue = rightCyl,
-                    onValueChange = onRightCylChange,
-                    values = cylValues,
-                    weight = 1f,
-                    thickness = thickness
-                )
-                TextFieldCell(
-                    value = rightAxis,
-                    onValueChange = onRightAxisChange,
-                    weight = 1f,
-                    thickness = thickness,
-                    isError = rightAxisError.isNotEmpty(),
-                    isLast = true
-                )
-            }
+                // Right Eye Row
+                Row(modifier = Modifier.height(rowHeight)) {
+                    LabelCell("Right", 1f, thickness, isBold = true)
+                    DropdownCell(
+                        selectedValue = rightSph,
+                        onValueChange = onRightSphChange,
+                        values = sphValues,
+                        weight = 1f,
+                        thickness = thickness
+                    )
+                    DropdownCell(
+                        selectedValue = rightCyl,
+                        onValueChange = onRightCylChange,
+                        values = cylValues,
+                        weight = 1f,
+                        thickness = thickness
+                    )
+                    TextFieldCell(
+                        value = rightAxis,
+                        onValueChange = onRightAxisChange,
+                        weight = 1f,
+                        thickness = thickness,
+                        isError = rightAxisError.isNotEmpty(),
+                        isLast = true
+                    )
+                }
 
-            Row(modifier = Modifier.height(rowHeight)) {
-                LabelCell("Left", 1f, thickness, isBold = true)
-                DropdownCell(
-                    selectedValue = leftSph,
-                    onValueChange = onLeftSphChange,
-                    values = sphValues,
-                    weight = 1f,
-                    thickness = thickness
-                )
-                DropdownCell(
-                    selectedValue = leftCyl,
-                    onValueChange = onLeftCylChange,
-                    values = cylValues,
-                    weight = 1f,
-                    thickness = thickness
-                )
-                TextFieldCell(
-                    value = leftAxis,
-                    onValueChange = onLeftAxisChange,
-                    weight = 1f,
-                    thickness = thickness,
-                    isError = leftAxisError.isNotEmpty(),
-                    isLast = true
-                )
-            }
+                // Left Eye Row
+                Row(modifier = Modifier.height(rowHeight)) {
+                    LabelCell("Left", 1f, thickness, isBold = true)
+                    DropdownCell(
+                        selectedValue = leftSph,
+                        onValueChange = onLeftSphChange,
+                        values = sphValues,
+                        weight = 1f,
+                        thickness = thickness
+                    )
+                    DropdownCell(
+                        selectedValue = leftCyl,
+                        onValueChange = onLeftCylChange,
+                        values = cylValues,
+                        weight = 1f,
+                        thickness = thickness
+                    )
+                    TextFieldCell(
+                        value = leftAxis,
+                        onValueChange = onLeftAxisChange,
+                        weight = 1f,
+                        thickness = thickness,
+                        isError = leftAxisError.isNotEmpty(),
+                        isLast = true
+                    )
+                }
 
-            Row(modifier = Modifier.height(rowHeight)) {
-                LabelCell("ADD", 1f, thickness, isBold = true)
-                DropdownCell(
-                    selectedValue = add,
-                    onValueChange = onAddChange,
-                    values = addValues,
-                    weight = 3f,
-                    thickness = thickness,
-                    isLast = true
-                )
+                // ADD Row
+                Row(modifier = Modifier.height(rowHeight)) {
+                    LabelCell("ADD", 1f, thickness, isBold = true, isLastRow = true)
+                    DropdownCell(
+                        selectedValue = add,
+                        onValueChange = onAddChange,
+                        values = addValues,
+                        weight = 3f,
+                        thickness = thickness,
+                        isLast = true,
+                        isLastRow = true
+                    )
+                }
             }
         }
     }
@@ -678,21 +693,23 @@ fun RowScope.LabelCell(
     thickness: Dp,
     isBold: Boolean = false,
     isItalic: Boolean = false,
-    isLast: Boolean = false
+    isLast: Boolean = false,
+    isLastRow: Boolean = false
 ) {
     Box(
         modifier = Modifier
             .weight(weight)
             .fillMaxHeight()
-            .drawCellLines(thickness, isLast),
+            .background(if (isBold && !isItalic) Color(0xFFFAFAFA) else Color.Transparent)
+            .drawCellLines(thickness, isLast, isLastRow),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            fontSize = 16.sp,
+            fontSize = 15.sp,
             fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
             fontStyle = if (isItalic) FontStyle.Italic else FontStyle.Normal,
-            color = Color.Black
+            color = Color(0xFF1A1A1A)
         )
     }
 }
@@ -720,15 +737,22 @@ fun RowScope.TextFieldCell(
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp),
             textStyle = TextStyle(
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 textAlign = TextAlign.Center,
-                color = if (isError) Color.Red else Color.Black
+                color = if (isError) Color(0xFFD32F2F) else Color(0xFF1A1A1A),
+                fontWeight = FontWeight.Medium
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             decorationBox = { innerTextField ->
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    if (value.isEmpty()) Text(text = "1-180", fontSize = 14.sp, color = Color.Gray)
+                    if (value.isEmpty()) {
+                        Text(
+                            text = "1-180",
+                            fontSize = 13.sp,
+                            color = Color(0xFF999999)
+                        )
+                    }
                     innerTextField()
                 }
             }
@@ -743,15 +767,17 @@ fun RowScope.DropdownCell(
     values: List<String>,
     weight: Float,
     thickness: Dp,
-    isLast: Boolean = false
+    isLast: Boolean = false,
+    isLastRow: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
     var textButtonWidth by remember { mutableIntStateOf(0) }
+
     Box(
         modifier = Modifier
             .weight(weight)
             .fillMaxHeight()
-            .drawCellLines(thickness, isLast),
+            .drawCellLines(thickness, isLast, isLastRow),
         contentAlignment = Alignment.Center
     ) {
         TextButton(
@@ -759,7 +785,10 @@ fun RowScope.DropdownCell(
             modifier = Modifier
                 .fillMaxSize()
                 .onSizeChanged { textButtonWidth = it.width },
-            shape = RectangleShape
+            shape = RectangleShape,
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = Color(0xFF1A1A1A)
+            )
         ) {
             val displayValue = if (selectedValue.isNotEmpty()) {
                 val num = selectedValue.toDoubleOrNull() ?: 0.0
@@ -767,180 +796,192 @@ fun RowScope.DropdownCell(
             } else "0.00"
             Text(
                 text = displayValue,
-                color = if (selectedValue.isEmpty()) Color.Gray else Color.Black,
-                fontSize = 16.sp
+                color = if (selectedValue.isEmpty()) Color(0xFF999999) else Color(0xFF1A1A1A),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
             )
         }
+
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
                 .height(250.dp)
-                .width(with(LocalDensity.current) { textButtonWidth.toDp() }),
-            containerColor = MaterialTheme.colorScheme.surface
+                .width(with(LocalDensity.current) { textButtonWidth.toDp() })
         ) {
             values.forEach { selection ->
                 val formattedSelection =
                     if ((selection.toDoubleOrNull() ?: 0.0) >= 0) "+$selection" else selection
-                DropdownMenuItem(text = {
-                    Text(
-                        text = formattedSelection,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                }, onClick = { onValueChange(selection); expanded = false })
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = formattedSelection,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    onClick = {
+                        onValueChange(selection)
+                        expanded = false
+                    }
+                )
             }
         }
     }
 }
 
-fun Modifier.drawCellLines(thickness: Dp, isLastColumn: Boolean): Modifier = this.drawBehind {
+fun Modifier.drawCellLines(
+    thickness: Dp,
+    isLastColumn: Boolean,
+    isLastRow: Boolean = false
+): Modifier = this.drawBehind {
     val strokeWidth = thickness.toPx()
-    drawLine(
-        color = Color.Black,
-        start = Offset(0f, size.height),
-        end = Offset(size.width, size.height),
-        strokeWidth = strokeWidth
-    )
-    if (!isLastColumn) drawLine(
-        color = Color.Black,
-        start = Offset(size.width, 0f),
-        end = Offset(size.width, size.height),
-        strokeWidth = strokeWidth
-    )
+    val borderColor = Color(0xFF333333)
+
+    // Bottom line
+    if (!isLastRow) {
+        drawLine(
+            color = borderColor,
+            start = Offset(0f, size.height),
+            end = Offset(size.width, size.height),
+            strokeWidth = strokeWidth
+        )
+    }
+    // Vertical divider (only if not the last column)
+    if (!isLastColumn) {
+        drawLine(
+            color = borderColor,
+            start = Offset(size.width, 0f),
+            end = Offset(size.width, size.height),
+            strokeWidth = strokeWidth
+        )
+    }
 }
 
 @Composable
 fun ResultsDisplay(modifier: Modifier = Modifier, results: CalculationResults) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp),
+                .padding(24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Distance Section Header
             Box(
                 modifier = Modifier
-                    .border(2.dp, Color.Black, RoundedCornerShape(50))
-                    .padding(horizontal = 32.dp, vertical = 8.dp)
+                    .border(2.dp, Color(0xFF2196F3), RoundedCornerShape(24.dp))
+                    .background(Color(0xFF2196F3).copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                    .padding(horizontal = 32.dp, vertical = 10.dp)
             ) {
                 Text(
                     text = "Distance",
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    fontStyle = FontStyle.Italic,
-                    color = Color.Black
+                    color = Color(0xFF2196F3)
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             results.right?.let { right ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Right:", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
-                    Column {
-                        Text(
-                            text = right.finalDistance,
-                            modifier = Modifier.padding(start = 24.dp, top = 0.dp),
-                            fontSize = 15.sp,
-                            color = Color.Black
-                        )
-                        right.transposedDistance?.let {
-                            Text(
-                                text = it,
-                                modifier = Modifier.padding(start = 24.dp, top = 2.dp),
-                                fontSize = 15.sp,
-                                color = Color.Black
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
+                ResultRow(
+                    label = "Right:",
+                    primary = right.finalDistance,
+                    secondary = right.transposedDistance
+                )
+                Spacer(modifier = Modifier.height(14.dp))
             }
+
             results.left?.let { left ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Left:", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
-                    Column {
-                        Text(
-                            text = left.finalDistance,
-                            modifier = Modifier.padding(start = 24.dp, top = 0.dp),
-                            fontSize = 15.sp,
-                            color = Color.Black
-                        )
-                        left.transposedDistance?.let {
-                            Text(
-                                text = it,
-                                modifier = Modifier.padding(start = 24.dp, top = 2.dp),
-                                fontSize = 15.sp,
-                                color = Color.Black
-                            )
-                        }
-                    }
-                }
+                ResultRow(
+                    label = "Left:",
+                    primary = left.finalDistance,
+                    secondary = left.transposedDistance
+                )
             }
+
             if (results.right?.finalNear != null || results.left?.finalNear != null) {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(28.dp))
+
+                // Near Section Header
                 Box(
                     modifier = Modifier
-                        .border(2.dp, Color.Black, RoundedCornerShape(50))
-                        .padding(horizontal = 32.dp, vertical = 8.dp)
+                        .border(2.dp, Color(0xFF4CAF50), RoundedCornerShape(24.dp))
+                        .background(Color(0xFF4CAF50).copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                        .padding(horizontal = 32.dp, vertical = 10.dp)
                 ) {
                     Text(
                         text = "Near",
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        fontStyle = FontStyle.Italic,
-                        color = Color.Black
+                        color = Color(0xFF4CAF50)
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+
+                Spacer(modifier = Modifier.height(20.dp))
+
                 results.right?.finalNear?.let { nearResult ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Right:", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
-                        Column {
-                            Text(
-                                text = nearResult,
-                                modifier = Modifier.padding(start = 24.dp, top = 0.dp),
-                                fontSize = 15.sp,
-                                color=Color.Black
-                            )
-                            results.right.transposedNear?.let {
-                                Text(
-                                    text = it,
-                                    modifier = Modifier.padding(start = 24.dp, top = 2.dp),
-                                    fontSize = 15.sp,
-                                    color = Color.Black
-                                )
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    ResultRow(
+                        label = "Right:",
+                        primary = nearResult,
+                        secondary = results.right.transposedNear
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
                 }
+
                 results.left?.finalNear?.let { nearResult ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Left:", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
-                        Column {
-                            Text(
-                                text = nearResult,
-                                modifier = Modifier.padding(start = 24.dp, top = 0.dp),
-                                fontSize = 15.sp,
-                                color = Color.Black
-                            )
-                            results.left.transposedNear?.let {
-                                Text(
-                                    text = it,
-                                    modifier = Modifier.padding(start = 24.dp, top = 2.dp),
-                                    fontSize = 15.sp,
-                                    color = Color.Black
-                                )
-                            }
-                        }
-                    }
+                    ResultRow(
+                        label = "Left:",
+                        primary = nearResult,
+                        secondary = results.left.transposedNear
+                    )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ResultRow(
+    label: String,
+    primary: String,
+    secondary: String?
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Text(
+            text = label,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            color = Color(0xFF333333),
+            modifier = Modifier.width(70.dp)
+        )
+        Column {
+            Text(
+                text = primary,
+                fontSize = 15.sp,
+                color = Color(0xFF1A1A1A),
+                fontWeight = FontWeight.Medium
+            )
+            secondary?.let {
+                Text(
+                    text = it,
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontSize = 14.sp,
+                    color = Color(0xFF666666),
+                    fontWeight = FontWeight.Normal
+                )
             }
         }
     }

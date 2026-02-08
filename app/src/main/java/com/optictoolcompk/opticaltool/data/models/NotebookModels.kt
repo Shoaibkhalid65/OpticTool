@@ -1,6 +1,10 @@
 package com.optictoolcompk.opticaltool.data.models
 
-import androidx.room.*
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
 
 // ==================== ROOM ENTITIES ====================
 
@@ -139,6 +143,7 @@ data class NotebookRow(
                     else -> ""
                 }
             }
+
             NotebookMode.SPH_CYL -> {
                 // SPH/CYL Mode
                 when {
@@ -149,12 +154,6 @@ data class NotebookRow(
                 }
             }
         }
-    }
-
-    private fun formatNumber(value: String): String {
-        val num = value.toDoubleOrNull() ?: return ""
-        return value
-//        return if (num > 0) "+$value" else value
     }
 }
 
@@ -210,6 +209,7 @@ data class ClipboardRow(
                     else -> ""
                 }
             }
+
             NotebookMode.SPH_CYL -> {
                 when {
                     !sphIsZero && !cylIsZero -> "$sphValue / $cylValue"
@@ -221,11 +221,6 @@ data class ClipboardRow(
         }
     }
 
-    private fun formatNumber(value: String): String {
-        val num = value.toDoubleOrNull() ?: return ""
-        return value
-//        return if (num > 0) "+$value" else value
-    }
 }
 
 /**

@@ -10,7 +10,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,22 +22,29 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -59,15 +65,19 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -78,6 +88,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -86,7 +98,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -102,6 +113,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PrescriptionListScreen(
@@ -109,7 +121,8 @@ fun PrescriptionListScreen(
     prescriptionViewModel: PrescriptionViewModel = hiltViewModel(),
     onCreateNewPrescription: () -> Unit,
     onEditPrescription: (PrescriptionEntity) -> Unit,
-    onCalculateTranspose: (PrescriptionEntity) -> Unit
+    onCalculateTranspose: (PrescriptionEntity) -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     val prescriptions by listViewModel.prescriptions.collectAsState()
     val filterState by listViewModel.filterState.collectAsState()
@@ -123,6 +136,7 @@ fun PrescriptionListScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var prescriptionToDelete by remember { mutableStateOf<PrescriptionEntity?>(null) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var fabMenuExpanded by remember { mutableStateOf(false) }
 
     // Handle delete success
     LaunchedEffect(deleteState) {
@@ -146,12 +160,12 @@ fun PrescriptionListScreen(
                         prescriptionViewModel.saveImageOnlyPrescription(compressedFile)
                         Toast.makeText(
                             context,
-                            "Prescription saved successfully!",
-                            Toast.LENGTH_LONG
+                            "Prescription saved",
+                            Toast.LENGTH_SHORT
                         ).show()
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -172,12 +186,12 @@ fun PrescriptionListScreen(
                         prescriptionViewModel.saveImageOnlyPrescription(compressedFile)
                         Toast.makeText(
                             context,
-                            "Prescription saved successfully!",
-                            Toast.LENGTH_LONG
+                            "Prescription saved",
+                            Toast.LENGTH_SHORT
                         ).show()
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -197,17 +211,29 @@ fun PrescriptionListScreen(
         }
     }
 
-    var fabMenuExpanded by remember { mutableStateOf(false) }
     BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
 
     Scaffold(
-        modifier = Modifier.statusBarsPadding(),
         topBar = {
             TopAppBar(
-                title = { Text("Prescriptions", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Prescriptions",
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            Icons.AutoMirrored.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
@@ -217,23 +243,34 @@ fun PrescriptionListScreen(
                 button = {
                     ToggleFloatingActionButton(
                         checked = fabMenuExpanded,
-                        onCheckedChange = { fabMenuExpanded = !fabMenuExpanded }
+                        onCheckedChange = { fabMenuExpanded = !fabMenuExpanded },
+                        containerColor = ToggleFloatingActionButtonDefaults.containerColor(
+                            initialColor = MaterialTheme.colorScheme.primary,
+                            finalColor = MaterialTheme.colorScheme.secondary
+                        ),
                     ) {
+                        val color= MaterialTheme.colorScheme.surface
                         Icon(
                             imageVector = if (fabMenuExpanded) Icons.Filled.Close else Icons.Filled.Add,
                             contentDescription = null,
-                            modifier = Modifier.animateIcon({ checkedProgress })
+                            modifier = Modifier.animateIcon({ checkedProgress }, color = {color }),
                         )
                     }
                 }
             ) {
                 FloatingActionButtonMenuItem(
-                    onClick = { fabMenuExpanded = false; onCreateNewPrescription() },
+                    onClick = {
+                        fabMenuExpanded = false
+                        onCreateNewPrescription()
+                    },
                     icon = { Icon(Icons.Default.Edit, "Create Form") },
                     text = { Text("Fill Form") }
                 )
                 FloatingActionButtonMenuItem(
-                    onClick = { fabMenuExpanded = false; imagePickerLauncher.launch("image/*") },
+                    onClick = {
+                        fabMenuExpanded = false
+                        imagePickerLauncher.launch("image/*")
+                    },
                     icon = { Icon(Icons.Default.Photo, "Upload Image") },
                     text = { Text("Upload from Gallery") }
                 )
@@ -268,84 +305,140 @@ fun PrescriptionListScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFFF5F5F5))
-        ) {
-            // Search and Sort Section
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                elevation = CardDefaults.cardElevation(2.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = filterState.searchQuery,
-                        onValueChange = { listViewModel.updateSearchQuery(it) },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Search name, phone, #") },
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = Color.LightGray
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                            MaterialTheme.colorScheme.background
                         )
                     )
+                )
+                .padding(paddingValues)
+        ) {
+            // Search and Sort Section
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.Transparent
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextField(
+                            value = filterState.searchQuery,
+                            onValueChange = { listViewModel.updateSearchQuery(it) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            placeholder = {
+                                Text(
+                                    "Search by name, phone, #...",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                disabledContainerColor = MaterialTheme.colorScheme.surface,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true
+                        )
 
-                    Box {
-                        IconButton(onClick = { showSortMenu = true }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Sort,
-                                contentDescription = "Sort",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false }
-                        ) {
-                            PrescriptionSortOption.entries.forEach { option ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            if (option == filterState.sortBy) {
+                        Box {
+                            Surface(
+                                onClick = { showSortMenu = true },
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 1.dp,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.background(color = MaterialTheme.colorScheme.surface)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Sort,
+                                        contentDescription = "Sort",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            DropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = { showSortMenu = false },
+                                shape = RoundedCornerShape(12.dp),
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 4.dp
+                            ) {
+                                PrescriptionSortOption.entries.forEach { option ->
+
+                                    val isSelected = option == filterState.sortBy
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                option.displayName,
+                                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                            )
+                                        },
+                                        onClick = {
+                                            listViewModel.updateSortOption(option)
+                                            showSortMenu = false
+                                        },
+                                        trailingIcon = {
+                                            if (isSelected) {
                                                 Icon(
                                                     Icons.Default.Check,
                                                     null,
                                                     modifier = Modifier.size(18.dp),
                                                     tint = MaterialTheme.colorScheme.primary
                                                 )
-                                                Spacer(Modifier.width(8.dp))
                                             }
-                                            Text(option.displayName)
-                                        }
-                                    },
-                                    onClick = {
-                                        listViewModel.updateSortOption(option)
-                                        showSortMenu = false
-                                    }
-                                )
+                                        },
+                                        colors = MenuDefaults.itemColors(
+                                            textColor = MaterialTheme.colorScheme.onSurface,
+                                            trailingIconColor = MaterialTheme.colorScheme.primary
+                                        ),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(
+                                                if (isSelected)
+                                                    MaterialTheme.colorScheme.primaryContainer.copy(
+                                                        alpha = 0.35f
+                                                    )
+                                                else
+                                                    Color.Transparent
+                                            )
+                                    )
+                                }
                             }
+
                         }
                     }
+
+                    // Stats row
+                    Text(
+                        text = "Total Prescriptions: ${prescriptions.size}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                    )
                 }
             }
-
-            // Status Bar
-            Text(
-                text = "Showing ${prescriptions.size} prescriptions",
-                modifier = Modifier.padding(start = 20.dp, bottom = 8.dp, end = 20.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
 
             // Prescription List
             if (prescriptions.isEmpty()) {
@@ -353,11 +446,12 @@ fun PrescriptionListScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+//                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(items = prescriptions, key = { it.id }) { prescription ->
-                        PrescriptionCard(
+                        CompactPrescriptionCard(
                             prescription = prescription,
                             onViewImage = {
                                 selectedImagePath = prescription.prescriptionImagePath
@@ -384,7 +478,10 @@ fun PrescriptionListScreen(
 
     // Dialogs
     if (showImageDialog && selectedImagePath.isNotEmpty()) {
-        ImagePreviewDialog(imagePath = selectedImagePath, onDismiss = { showImageDialog = false })
+        ImagePreviewDialog(
+            imagePath = selectedImagePath,
+            onDismiss = { showImageDialog = false }
+        )
     }
 
     if (showDeleteDialog && prescriptionToDelete != null) {
@@ -392,13 +489,16 @@ fun PrescriptionListScreen(
             prescription = prescriptionToDelete!!,
             deleteState = deleteState,
             onConfirm = { listViewModel.deletePrescription(prescriptionToDelete!!) },
-            onDismiss = { showDeleteDialog = false; prescriptionToDelete = null }
+            onDismiss = {
+                showDeleteDialog = false
+                prescriptionToDelete = null
+            }
         )
     }
 }
 
 @Composable
-fun PrescriptionCard(
+fun CompactPrescriptionCard(
     prescription: PrescriptionEntity,
     onViewImage: () -> Unit,
     onEdit: () -> Unit,
@@ -409,78 +509,86 @@ fun PrescriptionCard(
     var showMoreOptions by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onEdit() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        onClick = onEdit,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            /* ---------------- Header ---------------- */
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+
+                Column {
                     Text(
                         text = prescription.prescriptionNumber,
-                        fontSize = 18.sp,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         text = formatDate(prescription.createdAt),
-                        fontSize = 12.sp,
-                        color = Color.Gray
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val iconTint= MaterialTheme.colorScheme.onSurfaceVariant
                     if (prescription.prescriptionImagePath.isNotEmpty()) {
-                        IconButton(onClick = onViewImage, modifier = Modifier.size(40.dp)) {
+                        IconButton(
+                            onClick = onViewImage,
+                            modifier = Modifier.size(36.dp)
+                        ) {
                             Icon(
                                 Icons.Default.Visibility,
-                                "View Image",
-                                tint = MaterialTheme.colorScheme.primary
+                                null,
+                                modifier = Modifier.size(20.dp),
+                                tint = iconTint,
                             )
                         }
                     }
 
-                    IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.Default.Edit, "Edit", tint = Color(0xFF4CAF50))
-                    }
-                    IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFF44336))
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            null,
+                            modifier = Modifier.size(20.dp),
+                            tint = iconTint,
+                        )
                     }
 
                     Box {
                         IconButton(
                             onClick = { showMoreOptions = true },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
-                            Icon(Icons.Default.MoreVert, "More options")
+                            Icon(
+                                Icons.Default.MoreVert,
+                                null,
+                                modifier = Modifier.size(20.dp),
+                                tint = iconTint,
+                            )
                         }
 
                         DropdownMenu(
                             expanded = showMoreOptions,
-                            onDismissRequest = { showMoreOptions = false }
+                            onDismissRequest = { showMoreOptions = false },
+                            shape = RoundedCornerShape(12.dp),
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 6.dp
                         ) {
-                            DropdownMenuItem(
-                                text = { Text("Share") },
-                                onClick = {
-                                    showMoreOptions = false
-                                    onShare(prescription)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Share,
-                                        null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            )
+
                             DropdownMenuItem(
                                 text = { Text("Calculate Transpose") },
                                 onClick = {
@@ -491,58 +599,168 @@ fun PrescriptionCard(
                                     Icon(
                                         Icons.Default.Calculate,
                                         null,
-                                        tint = MaterialTheme.colorScheme.secondary
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             )
+
+                            DropdownMenuItem(
+                                text = { Text("Share") },
+                                onClick = {
+                                    showMoreOptions = false
+                                    onShare(prescription)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Share,
+                                        null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+
+                            Spacer(Modifier.height(4.dp))
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(Modifier.height(4.dp))
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "Delete",
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                onClick = {
+                                    showMoreOptions = false
+                                    onDelete()
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = MaterialTheme.colorScheme.error,
+                                    leadingIconColor = MaterialTheme.colorScheme.error
+                                )
+                            )
                         }
+
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(12.dp))
 
-            InfoRow(label = "Name", value = prescription.patientName)
-            InfoRow(label = "Phone", value = prescription.phone)
-            if (prescription.age.isNotEmpty()) InfoRow(label = "Age", value = prescription.age)
-            if (prescription.city.isNotEmpty()) InfoRow(label = "City", value = prescription.city)
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            )
 
-            if (prescription.rightSph.isNotEmpty() || prescription.leftSph.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+            /* ---------------- Patient Info (Conditional) ---------------- */
+            if (prescription.patientName.isNotBlank()) {
+
+                Spacer(Modifier.height(12.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (prescription.rightSph.isNotEmpty()) {
-                        Column(modifier = Modifier.weight(1f)) {
+                    Icon(
+                        Icons.Default.Person,
+                        null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Spacer(Modifier.width(8.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = prescription.patientName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        if (prescription.phone.isNotEmpty()) {
                             Text(
-                                "Right Eye",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.Gray
-                            )
-                            Text(
-                                "SPH: ${formatValue(prescription.rightSph)}",
-                                fontSize = 11.sp,
-                                color = Color.DarkGray
+                                text = prescription.phone,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
+                }
+            }
+
+            /* ---------------- Power Section ---------------- */
+            if (prescription.rightSph.isNotEmpty() || prescription.leftSph.isNotEmpty()) {
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                        )
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+
+                    if (prescription.rightSph.isNotEmpty()) {
+                        CompactPowerColumn(
+                            label = "OD",
+                            sph = prescription.rightSph,
+                            cyl = prescription.rightCyl
+                        )
+                    }
+
+                    if (
+                        prescription.rightSph.isNotEmpty() &&
+                        prescription.leftSph.isNotEmpty()
+                    ) {
+                        VerticalDivider(
+                            modifier = Modifier.height(36.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+
                     if (prescription.leftSph.isNotEmpty()) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Left Eye",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.Gray
-                            )
-                            Text(
-                                "SPH: ${formatValue(prescription.leftSph)}",
-                                fontSize = 11.sp,
-                                color = Color.DarkGray
-                            )
-                        }
+                        CompactPowerColumn(
+                            label = "OS",
+                            sph = prescription.leftSph,
+                            cyl = prescription.leftCyl
+                        )
+                    }
+                }
+            }
+
+            /* ---------------- Extra Info ---------------- */
+            if (prescription.age.isNotEmpty() || prescription.city.isNotEmpty()) {
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                    if (prescription.age.isNotEmpty()) {
+                        CompactInfoChip(
+                            icon = Icons.Default.CalendarToday,
+                            text = "${prescription.age} yrs"
+                        )
+                    }
+
+                    if (prescription.city.isNotEmpty()) {
+                        CompactInfoChip(
+                            icon = Icons.Default.LocationOn,
+                            text = prescription.city
+                        )
                     }
                 }
             }
@@ -550,73 +768,146 @@ fun PrescriptionCard(
     }
 }
 
+
 @Composable
-fun InfoRow(label: String, value: String) {
-    if (value.isNotEmpty()) {
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp)) {
+fun CompactPowerColumn(
+    label: String,
+    sph: String,
+    cyl: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.secondary,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = formatValue(sph),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
+        if (cyl.isNotEmpty()) {
             Text(
-                "$label:",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Gray,
-                modifier = Modifier.width(80.dp)
-            )
-            Text(
-                value,
-                fontSize = 14.sp,
-                color = Color.DarkGray,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                text = "CYL: ${formatValue(cyl)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
 @Composable
-fun ImagePreviewDialog(imagePath: String, onDismiss: () -> Unit) {
+fun CompactInfoChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            null,
+            modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+
+@Composable
+fun ImagePreviewDialog(
+    imagePath: String,
+    onDismiss: () -> Unit
+) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
+
+                /* -------- Header -------- */
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Prescription Image", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) }
+                    Text(
+                        text = "Prescription Image",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, null)
+                    }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
+
+                /* -------- Image -------- */
                 val file = File(imagePath)
                 if (file.exists()) {
-                    val bitmap = remember(imagePath) { BitmapFactory.decodeFile(imagePath) }
+                    val bitmap = remember(imagePath) {
+                        BitmapFactory.decodeFile(imagePath)
+                    }
+
                     if (bitmap != null) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = "Prescription Image",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 500.dp),
+                                .heightIn(max = 500.dp)
+                                .clip(RoundedCornerShape(12.dp)),
                             contentScale = ContentScale.Fit
                         )
-                    } else ErrorImageView()
-                } else ErrorImageView()
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
-                ) { Text("Close") }
+                    } else {
+                        ErrorImageView()
+                    }
+                } else {
+                    ErrorImageView()
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                /* -------- Actions -------- */
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Close")
+                    }
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun ErrorImageView() {
@@ -624,10 +915,24 @@ fun ErrorImageView() {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .background(Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
         contentAlignment = Alignment.Center
     ) {
-        Text("Image not available", color = Color.Gray, fontSize = 14.sp)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Default.BrokenImage,
+                null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Image not available",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
 
@@ -640,22 +945,68 @@ fun DeleteConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = { if (deleteState !is DeleteState.Deleting) onDismiss() },
-        title = { Text("Delete Prescription", fontWeight = FontWeight.Bold) },
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.errorContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.DeleteForever,
+                    null,
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        },
+        title = {
+            Text(
+                "Delete Prescription?",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        },
         text = {
             Column {
-                Text("Are you sure you want to delete this prescription?")
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "${prescription.prescriptionNumber} - ${prescription.patientName}",
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+                    "This action cannot be undone. The prescription will be permanently deleted.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "Rx #${prescription.prescriptionNumber}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            prescription.patientName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
                 if (deleteState is DeleteState.Error) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         deleteState.message,
                         color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
@@ -664,12 +1015,16 @@ fun DeleteConfirmationDialog(
             Button(
                 onClick = onConfirm,
                 enabled = deleteState !is DeleteState.Deleting,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(48.dp)
             ) {
                 if (deleteState is DeleteState.Deleting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onError,
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -680,32 +1035,59 @@ fun DeleteConfirmationDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                enabled = deleteState !is DeleteState.Deleting
-            ) { Text("Cancel") }
-        }
+                enabled = deleteState !is DeleteState.Deleting,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(48.dp)
+            ) {
+                Text("Cancel")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
     )
 }
 
 @Composable
 fun EmptyState() {
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .padding(32.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Description,
+                    null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Text(
                 "No Prescriptions Yet",
-                fontSize = 20.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurface
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 "Tap the + button to create your first prescription",
-                fontSize = 14.sp,
-                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
         }

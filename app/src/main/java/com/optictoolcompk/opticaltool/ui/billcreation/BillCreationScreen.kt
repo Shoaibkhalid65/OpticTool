@@ -2,9 +2,9 @@ package com.optictoolcompk.opticaltool.ui.billcreation
 
 import android.graphics.Bitmap
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -31,10 +31,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Panorama
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,9 +63,11 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -62,7 +76,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -70,7 +86,6 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -141,39 +156,63 @@ fun BillCreationScreen(
         }
     }
 
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (uiState.isEditMode) "Edit Bill" else "Create Bill") },
+                title = {
+                    Text(
+                        if (uiState.isEditMode) "Edit Bill" else "Create Bill",
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, "Back")
                     }
                 },
                 actions = {
-                    TextButton(
+                    Button(
                         onClick = { viewModel.saveBill() },
-                        enabled = !uiState.isSaving
+                        enabled = !uiState.isSaving,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
                     ) {
                         if (uiState.isSaving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onSecondary
                             )
                         } else {
-                            Text("SAVE")
+                            Icon(Icons.Default.Save, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("SAVE", fontWeight = FontWeight.Bold)
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -199,10 +238,10 @@ fun BillCreationScreen(
             )
 
             // Items Section
-            Text(
-                "Items",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SectionHeader(
+                title = "Items",
+                subtitle = "${uiState.items.size} item(s)",
+                icon = Icons.Default.Receipt
             )
 
             uiState.items.forEachIndexed { index, item ->
@@ -216,17 +255,24 @@ fun BillCreationScreen(
 
             OutlinedButton(
                 onClick = { viewModel.onAddItem() },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline
+                )
             ) {
                 Icon(Icons.Default.Add, null)
                 Spacer(Modifier.width(8.dp))
                 Text("Add Item")
             }
 
-            // --- SEPARATED PRESCRIPTION SECTIONS ---
-
-            // 1. Add New Prescription Section (Conditional)
+            // Prescription Sections
             if (displaySettings.showPrescription) {
+                SectionHeader(
+                    title = "Add New Prescription",
+                    icon = Icons.Default.Edit
+                )
                 AddNewPrescriptionSection(
                     prescriptionFormData = uiState.prescriptionFormData,
                     onCreateNewClick = { viewModel.onShowPrescriptionOptionsDialog() },
@@ -234,7 +280,6 @@ fun BillCreationScreen(
                     isFormVisible = uiState.showPrescriptionFormCard
                 )
 
-                // Inline Prescription Form Card (if visible)
                 if (uiState.showPrescriptionFormCard) {
                     PrescriptionFormCard(
                         formData = uiState.prescriptionFormInputs,
@@ -249,13 +294,19 @@ fun BillCreationScreen(
                 }
             }
 
-            // 2. Search Saved Prescriptions Section (Permanent)
+            // Search Saved Prescriptions
+            SectionHeader(
+                title = "Search Saved Prescriptions",
+                subtitle = "${uiState.prescriptionImagesPaths.size}/3 added",
+                icon = Icons.Default.Search
+            )
             SearchSavedPrescriptionsSection(
                 prescriptionImages = uiState.prescriptionImagesPaths,
                 onSearchSavedClick = { viewModel.onShowPrescriptionSearchDialog() },
                 onRemoveImage = { index -> viewModel.onRemovePrescriptionImage(index) }
             )
 
+            // Previous Unpaid Bills
             SearchUnpaidBillsCard(onClick = { viewModel.onShowUnpaidBillsDialog() })
 
             // Totals
@@ -277,11 +328,13 @@ fun BillCreationScreen(
                 currency = shopSettings.currency
             )
 
+            // Pickup Date
             PickupDateCard(
                 pickupDate = uiState.pickupDate,
                 onChange = { viewModel.onPickupDateChanged(it) }
             )
 
+            // Images
             if (displaySettings.showUploadCaptureImages) {
                 ImagesCard(
                     imagePaths = uiState.imagePaths,
@@ -291,6 +344,7 @@ fun BillCreationScreen(
                 )
             }
 
+            // Display Settings
             DisplaySettingsCard(
                 settings = displaySettings,
                 onChange = { viewModel.onDisplaySettingsChanged(it) }
@@ -298,7 +352,7 @@ fun BillCreationScreen(
         }
     }
 
-    // Unpaid Bills Dialog
+    // Dialogs
     val showUnpaidDialog by viewModel.showUnpaidBillsDialog.collectAsStateWithLifecycle()
     if (showUnpaidDialog) {
         SearchUnpaidBillsDialog(
@@ -311,7 +365,6 @@ fun BillCreationScreen(
         )
     }
 
-    // Search Prescription Dialog
     val showPrescriptionDialog by viewModel.showPrescriptionSearchDialog.collectAsState()
     if (showPrescriptionDialog) {
         SearchPrescriptionDialog(
@@ -328,7 +381,6 @@ fun BillCreationScreen(
         )
     }
 
-    // Prescription Options Dialog
     if (uiState.showPrescriptionOptionsDialog) {
         PrescriptionOptionsDialog(
             onDismiss = { viewModel.onHidePrescriptionOptionsDialog() },
@@ -344,7 +396,6 @@ fun BillCreationScreen(
 
     uiState.error?.let { error ->
         LaunchedEffect(error) {
-//            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
             snackbarHostState.showSnackbar(
                 message = error,
                 duration = SnackbarDuration.Short
@@ -354,7 +405,286 @@ fun BillCreationScreen(
     }
 }
 
+// ==================== SECTION HEADER ====================
+
+@Composable
+fun SectionHeader(
+    title: String,
+    subtitle: String? = null,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (subtitle != null) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
 // ==================== COMPOSABLE COMPONENTS ====================
+
+@Composable
+fun InvoiceInfoCard(
+    invoiceNumber: String,
+    invoiceDate: String,
+    invoiceTime: String,
+    shopName: String,
+    shopAddress: String,
+    shopPhone: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Invoice #$invoiceNumber",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        shopName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    if (shopAddress.isNotBlank()) {
+                        Text(
+                            shopAddress,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
+                    if (shopPhone.isNotBlank()) {
+                        Text(
+                            shopPhone,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            Text(
+                                invoiceDate,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Text(
+                                invoiceTime,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CustomerInfoCard(
+    name: String,
+    onNameChange: (String) -> Unit,
+    phone: String,
+    onPhoneChange: (String) -> Unit,
+    city: String,
+    onCityChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Person,
+                    null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Customer Information",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            OutlinedTextField(
+                value = name,
+                onValueChange = onNameChange,
+                label = { Text("Customer Name *") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                leadingIcon = { Icon(Icons.Default.Person, null) }
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = onPhoneChange,
+                    label = { Text("Phone *") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = { Icon(Icons.Default.Phone, null) }
+                )
+                OutlinedTextField(
+                    value = city,
+                    onValueChange = onCityChange,
+                    label = { Text("City") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun BillItemCard(
+    item: BillItem,
+    currency: String,
+    onItemChange: (BillItem) -> Unit,
+    onRemove: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Item",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        "Remove",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = item.itemName,
+                onValueChange = { onItemChange(item.copy(itemName = it)) },
+                label = { Text("Item Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = if (item.quantity == 0) "" else item.quantity.toString(),
+                    onValueChange = { onItemChange(item.copy(quantity = it.toIntOrNull() ?: 0)) },
+                    label = { Text("Qty") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = if (item.price == 0.0) "" else item.price.toString(),
+                    onValueChange = { onItemChange(item.copy(price = it.toDoubleOrNull() ?: 0.0)) },
+                    label = { Text("Price") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    prefix = { Text("$currency ") }
+                )
+                OutlinedTextField(
+                    value = String.format(Locale.getDefault(), "%.0f", item.total),
+                    onValueChange = { },
+                    label = { Text("Total") },
+                    modifier = Modifier.weight(1f),
+                    readOnly = true,
+                    enabled = false,
+                    shape = RoundedCornerShape(12.dp),
+                    prefix = { Text("$currency ") }
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun AddNewPrescriptionSection(
@@ -365,53 +695,54 @@ fun AddNewPrescriptionSection(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                "Add New Prescription",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.height(12.dp))
-
-            // Add New button (Disabled if already added)
             OutlinedButton(
                 onClick = onCreateNewClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = prescriptionFormData == null && !isFormVisible
+                enabled = prescriptionFormData == null && !isFormVisible,
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(Icons.Default.Add, null)
                 Spacer(Modifier.width(8.dp))
                 Text("Add New Prescription")
             }
 
-            // Preview Section
             if (prescriptionFormData != null && prescriptionFormData.patientName.isBlank()) {
                 Spacer(Modifier.height(16.dp))
-                Card(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
-                    ),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(
                         1.dp,
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                     )
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                if (prescriptionFormData.patientName.isBlank()) "Image Prescription" else "Form Prescription",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Image Prescription Added",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                             IconButton(onClick = onRemovePrescription) {
                                 Icon(
                                     Icons.Default.Delete,
@@ -421,21 +752,23 @@ fun AddNewPrescriptionSection(
                             }
                         }
 
+                        Spacer(Modifier.height(8.dp))
+
                         Text(
                             "Rx Number: ${prescriptionFormData.prescriptionNumber}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
 
-                        Spacer(Modifier.height(8.dp))
-
                         if (prescriptionFormData.prescriptionImagePath.isNotBlank()) {
+                            Spacer(Modifier.height(12.dp))
                             AsyncImage(
                                 model = File(prescriptionFormData.prescriptionImagePath),
                                 contentDescription = "New Prescription Preview",
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(max = 200.dp),
+                                    .heightIn(max = 200.dp)
+                                    .clip(RoundedCornerShape(12.dp)),
                                 contentScale = ContentScale.Fit
                             )
                         }
@@ -456,21 +789,16 @@ fun SearchSavedPrescriptionsSection(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                "Search Saved Prescriptions",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.height(12.dp))
-
             OutlinedButton(
                 onClick = onSearchSavedClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !maxReached
+                enabled = !maxReached,
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(Icons.Default.Search, null)
                 Spacer(Modifier.width(8.dp))
@@ -478,31 +806,121 @@ fun SearchSavedPrescriptionsSection(
             }
 
             if (maxReached) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Maximum 3 saved prescription images added",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    fontStyle = FontStyle.Italic
-                )
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Maximum 3 saved prescription images added",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
 
-            // Display added images below the card
             if (prescriptionImages.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Selected Saved Prescriptions (${prescriptionImages.size}/3)",
-                    style = MaterialTheme.typography.labelMedium,
+                    "Selected Prescriptions (${prescriptionImages.size}/3)",
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
                 prescriptionImages.forEachIndexed { index, imagePath ->
                     PrescriptionImageItem(
                         imagePath = imagePath,
                         index = index + 1,
                         onRemove = { onRemoveImage(index) }
                     )
-                    if (index < prescriptionImages.size - 1) Spacer(Modifier.height(8.dp))
+                    if (index < prescriptionImages.size - 1) Spacer(Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PrescriptionImageItem(
+    imagePath: String,
+    index: Int,
+    onRemove: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.5f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                AsyncImage(
+                    model = File(imagePath),
+                    contentDescription = "Prescription Image",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(32.dp)
+                        .background(
+                            MaterialTheme.colorScheme.errorContainer,
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Remove",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Saved Prescription #$index",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = "Database",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -522,7 +940,7 @@ fun PrescriptionFormCard(
 
     LaunchedEffect(shouldTriggerCapture) {
         if (shouldTriggerCapture) {
-            delay(100) // Ensure layout is settled
+            delay(100)
             if (graphicsLayer.size.width > 0 && graphicsLayer.size.height > 0) {
                 val bitmap = graphicsLayer.toImageBitmap()
                 val imageWithPadding = addPaddingToImage(bitmap, paddingPx = 24)
@@ -534,6 +952,7 @@ fun PrescriptionFormCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -543,7 +962,7 @@ fun PrescriptionFormCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Fill Prescription Form",
+                    "Prescription Form",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -557,7 +976,7 @@ fun PrescriptionFormCard(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
             Box(
                 modifier = Modifier
@@ -623,117 +1042,6 @@ fun PrescriptionFormCard(
 }
 
 @Composable
-fun PrescriptionImageItem(
-    imagePath: String,
-    index: Int,
-    onRemove: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .background(Color.White)
-            ) {
-                AsyncImage(
-                    model = File(imagePath),
-                    contentDescription = "Prescription Image",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
-
-                IconButton(
-                    onClick = onRemove,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .size(28.dp)
-                        .background(
-                            color = Color.LightGray.copy(alpha = 0.5f),
-                            shape = CircleShape
-                        )
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Remove",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = "Saved Prescription #$index",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Text(
-                text = "Imported from database",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-fun PrescriptionOptionsDialog(
-    onDismiss: () -> Unit,
-    onAddByImage: () -> Unit,
-    onFillForm: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    "Create New Prescription",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    "Choose how you want to add the prescription:",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(24.dp))
-                OutlinedButton(onClick = onAddByImage, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Default.AddPhotoAlternate, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Add by Image")
-                }
-                Spacer(Modifier.height(12.dp))
-                Button(onClick = onFillForm, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Default.Add, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("By Filling the Form")
-                }
-                Spacer(Modifier.height(16.dp))
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
-                ) { Text("Cancel") }
-            }
-        }
-    }
-}
-
-// Helper Prescription Footer for Bill Creation Form
-@Composable
 fun PrescriptionFooter(
     ipdN: String, onIpdNChange: (String) -> Unit,
     ipdD: String, onIpdDChange: (String) -> Unit,
@@ -748,13 +1056,13 @@ fun PrescriptionFooter(
     ) {
         if (showIpd) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("I.P.D", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("I.P.D", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
                 Spacer(Modifier.width(8.dp))
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("D ", fontSize = 14.sp)
+                        Text("D ", fontSize = 14.sp, color = Color.Black)
                         SmallField(ipdD, onIpdDChange)
-                        Text("mm", fontSize = 13.sp)
+                        Text("mm", fontSize = 13.sp, color = Color.Black)
                     }
                     HorizontalDivider(
                         modifier = Modifier.width(80.dp),
@@ -762,9 +1070,9 @@ fun PrescriptionFooter(
                         thickness = 1.5.dp
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("N ", fontSize = 14.sp)
+                        Text("N ", fontSize = 14.sp, color = Color.Black)
                         SmallField(ipdN, onIpdNChange)
-                        Text("mm", fontSize = 13.sp)
+                        Text("mm", fontSize = 13.sp, color = Color.Black)
                     }
                 }
             }
@@ -776,270 +1084,22 @@ fun PrescriptionFooter(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.End
             ) {
-                Text("Checked by :", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Checked by :",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 BasicTextField(
                     value = checkedBy,
                     onValueChange = onCheckedByChange,
                     modifier = Modifier
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
-                    textStyle = TextStyle(fontSize = 16.sp),
+                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 12.dp),
+                    textStyle = TextStyle(fontSize = 15.sp),
                     singleLine = true
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchPrescriptionDialog(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    searchResults: List<PrescriptionEntity>,
-    onPrescriptionSelected: (PrescriptionEntity) -> Unit,
-    onDismiss: () -> Unit,
-    maxImagesReached: Boolean = false
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 500.dp),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Search Prescriptions",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "Close") }
-                }
-                if (maxImagesReached) {
-                    Text(
-                        "Maximum 3 prescription images reached",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = onSearchQueryChange,
-                    label = { Text("Search by name, phone, or Rx number") },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
-                    enabled = !maxImagesReached
-                )
-                Spacer(Modifier.height(16.dp))
-                if (!maxImagesReached && searchResults.isNotEmpty()) {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(searchResults.size) { index ->
-                            val prescription = searchResults[index]
-                            PrescriptionSearchItem(
-                                prescription = prescription,
-                                onClick = { onPrescriptionSelected(prescription) })
-                        }
-                    }
-                } else if (!maxImagesReached && searchQuery.length >= 2) {
-                    Text(
-                        "No prescriptions found",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PrescriptionSearchItem(prescription: PrescriptionEntity, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    prescription.patientName.ifBlank { "Image Only" },
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    prescription.prescriptionNumber,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            if (prescription.phone.isNotBlank()) Text(
-                prescription.phone,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
-
-@Composable
-fun InvoiceInfoCard(
-    invoiceNumber: String,
-    invoiceDate: String,
-    invoiceTime: String,
-    shopName: String,
-    shopAddress: String,
-    shopPhone: String
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Invoice No : $invoiceNumber",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(invoiceDate, style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        invoiceTime,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                shopName,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                shopAddress,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (shopPhone.isNotBlank()) Text(
-                shopPhone,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-fun CustomerInfoCard(
-    name: String,
-    onNameChange: (String) -> Unit,
-    phone: String,
-    onPhoneChange: (String) -> Unit,
-    city: String,
-    onCityChange: (String) -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                "Customer Information",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            OutlinedTextField(
-                value = name,
-                onValueChange = onNameChange,
-                label = { Text("Customer Name *") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = onPhoneChange,
-                    label = { Text("Phone *") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = city,
-                    onValueChange = onCityChange,
-                    label = { Text("City") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun BillItemCard(
-    item: BillItem,
-    currency: String,
-    onItemChange: (BillItem) -> Unit,
-    onRemove: () -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Item",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(
-                    onClick = onRemove,
-                    modifier = Modifier.size(32.dp)
-                ) { Icon(Icons.Default.Close, "Remove", tint = MaterialTheme.colorScheme.error) }
-            }
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = item.itemName,
-                onValueChange = { onItemChange(item.copy(itemName = it)) },
-                label = { Text("Item Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = if (item.quantity == 0) "" else item.quantity.toString(),
-                    onValueChange = { onItemChange(item.copy(quantity = it.toIntOrNull() ?: 0)) },
-                    label = { Text("Qty") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = if (item.price == 0.0) "" else item.price.toString(),
-                    onValueChange = { onItemChange(item.copy(price = it.toDoubleOrNull() ?: 0.0)) },
-                    label = { Text("Price") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    prefix = { Text("$currency ") })
-                OutlinedTextField(
-                    value = String.format(Locale.getDefault(), "%.0f", item.total),
-                    onValueChange = { },
-                    label = { Text("Total") },
-                    modifier = Modifier.weight(1f),
-                    readOnly = true,
-                    enabled = false,
-                    prefix = { Text("$currency ") })
             }
         }
     }
@@ -1049,27 +1109,63 @@ fun BillItemCard(
 fun SearchUnpaidBillsCard(onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp)
+                .clip(RoundedCornerShape(16.dp)),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Previous Unpaid Bill?",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Search and add to previous amount",
-                    style = MaterialTheme.typography.bodySmall
-                )
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(16.dp)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(
+                        "Previous Unpaid Bill?",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Text(
+                        "Search and add to previous amount",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                    )
+                }
             }
-            Button(onClick = onClick) { Text("Search") }
+            Spacer(Modifier.width(8.dp))
+            Button(
+                onClick = onClick,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(Icons.Default.Search, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Search")
+            }
         }
     }
 }
@@ -1092,41 +1188,76 @@ fun TotalsCard(
     remainingNote: String?,
     currency: String
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 "Payment Summary",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+
+            // Total Amount
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Total:", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    "$currency ${String.format(Locale.getDefault(), "%.0f", totalAmount)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            if (previousAmount.isNotBlank() && (previousAmount.toDoubleOrNull() ?: 0.0) > 0) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Previous:", style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "$currency $previousAmount",
+                        "Total:",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.error
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "$currency ${String.format(Locale.getDefault(), "%.0f", totalAmount)}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
+
+            if (previousAmount.isNotBlank() && (previousAmount.toDoubleOrNull() ?: 0.0) > 0) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "Previous:",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "$currency $previousAmount",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value = discount,
                 onValueChange = onDiscountChange,
@@ -1134,8 +1265,10 @@ fun TotalsCard(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 prefix = { Text("- $currency ") },
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
+
             OutlinedTextField(
                 value = advance,
                 onValueChange = onAdvanceChange,
@@ -1143,8 +1276,10 @@ fun TotalsCard(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 prefix = { Text("- $currency ") },
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
+
             OutlinedTextField(
                 value = advance2,
                 onValueChange = onAdvance2Change,
@@ -1153,10 +1288,12 @@ fun TotalsCard(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 prefix = { Text("- $currency ") },
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 supportingText = if (advance2.isNotBlank() && advance2Date != null) {
                     { Text(advance2Date) }
                 } else null
             )
+
             OutlinedTextField(
                 value = advance3,
                 onValueChange = onAdvance3Change,
@@ -1165,46 +1302,87 @@ fun TotalsCard(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 prefix = { Text("- $currency ") },
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 supportingText = if (advance3.isNotBlank() && advance3Date != null) {
                     { Text(advance3Date) }
                 } else null
             )
-            HorizontalDivider()
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+
+            HorizontalDivider(thickness = 1.dp)
+
+            // Remaining Amount
+            Surface(
+                color = if (remainingAmount > 0)
+                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                else
+                    Color(0xFF4CAF50).copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    "Remaining:",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "$currency ${String.format(Locale.getDefault(), "%.0f", remainingAmount)}",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = if (remainingAmount > 0) MaterialTheme.colorScheme.error else Color(
-                        0xFF4CAF50
-                    )
-                )
-            }
-            if (remainingNote != null) Text(
-                remainingNote,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (remainingAmount <= 0 && totalAmount > 0) {
-                Surface(
-                    color = Color(0xFF4CAF50).copy(alpha = 0.1f),
-                    shape = MaterialTheme.shapes.small
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "✓ FULLY PAID",
-                        modifier = Modifier.padding(8.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4CAF50)
+                        "Remaining:",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
+                    Text(
+                        "$currency ${String.format(Locale.getDefault(), "%.0f", remainingAmount)}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (remainingAmount > 0) MaterialTheme.colorScheme.error
+                        else Color(0xFF4CAF50)
+                    )
+                }
+            }
+
+            if (remainingNote != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Info,
+                        null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        remainingNote,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (remainingAmount <= 0 && totalAmount > 0) {
+                Surface(
+                    color = Color(0xFF4CAF50).copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            null,
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "FULLY PAID",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF4CAF50)
+                        )
+                    }
                 }
             }
         }
@@ -1213,21 +1391,27 @@ fun TotalsCard(
 
 @Composable
 fun PickupDateCard(pickupDate: String?, onChange: (String?) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 "Pickup Date (Optional)",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = pickupDate ?: "",
                 onValueChange = { onChange(it.ifBlank { null }) },
                 label = { Text("Pickup Date") },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("e.g., 15 January 2026") },
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
         }
     }
@@ -1240,40 +1424,57 @@ fun ImagesCard(
     onAdd: () -> Unit,
     onRemove: (String) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Images (${imagePaths.size}/4)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Panorama, null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Images (${imagePaths.size}/4)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 if (imagePaths.size < 4) {
-                    Button(onClick = onAdd, enabled = !isUploading) {
-                        if (isUploading) CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                        else {
+                    Button(
+                        onClick = onAdd,
+                        enabled = !isUploading,
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        if (isUploading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
                             Icon(
                                 Icons.Default.AddPhotoAlternate,
-                                null
-                            ); Spacer(Modifier.width(4.dp)); Text("Add")
+                                null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Add")
                         }
                     }
                 }
             }
+
             if (imagePaths.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Spacer(Modifier.height(16.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     imagePaths.forEach { path ->
-                        ImagePreview(
-                            imagePath = path,
-                            onRemove = { onRemove(path) })
+                        ImagePreview(imagePath = path, onRemove = { onRemove(path) })
                     }
                 }
             }
@@ -1286,7 +1487,9 @@ fun ImagePreview(imagePath: String, onRemove: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .height(140.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Box {
             AsyncImage(
@@ -1299,60 +1502,61 @@ fun ImagePreview(imagePath: String, onRemove: () -> Unit) {
                 onClick = onRemove,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(4.dp)
+                    .padding(8.dp)
+                    .size(32.dp)
+                    .background(MaterialTheme.colorScheme.errorContainer, CircleShape)
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.error,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        "Remove",
-                        tint = Color.White,
-                        modifier = Modifier.padding(4.dp)
-                    )
-                }
+                Icon(
+                    Icons.Default.Close,
+                    "Remove",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-fun DisplaySettingsCard(settings: BillDisplaySettings, onChange: (BillDisplaySettings) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun DisplaySettingsCard(
+    settings: BillDisplaySettings,
+    onChange: (BillDisplaySettings) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                "Display Settings",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.height(8.dp))
-            SettingRow("Show Prescription", settings.showPrescription) {
-                onChange(
-                    settings.copy(
-                        showPrescription = it
-                    )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Settings, null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Display Settings",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingRow("Show Prescription", settings.showPrescription) {
+                onChange(settings.copy(showPrescription = it))
+            }
             if (settings.showPrescription) {
-                SettingRow("Show I.P.D", settings.showIpd) { onChange(settings.copy(showIpd = it)) }
+                SettingRow("Show I.P.D", settings.showIpd) {
+                    onChange(settings.copy(showIpd = it))
+                }
                 SettingRow("Show Checked BY", settings.showCheckedBy) {
-                    onChange(
-                        settings.copy(
-                            showCheckedBy = it
-                        )
-                    )
+                    onChange(settings.copy(showCheckedBy = it))
                 }
             }
             SettingRow("Auto-save Prescriptions", settings.autoSavePrescriptions) {
-                onChange(
-                    settings.copy(autoSavePrescriptions = it)
-                )
+                onChange(settings.copy(autoSavePrescriptions = it))
             }
             SettingRow("Show Upload/Capture Images", settings.showUploadCaptureImages) {
-                onChange(
-                    settings.copy(showUploadCaptureImages = it)
-                )
+                onChange(settings.copy(showUploadCaptureImages = it))
             }
         }
     }
@@ -1361,11 +1565,223 @@ fun DisplaySettingsCard(settings: BillDisplaySettings, onChange: (BillDisplaySet
 @Composable
 fun SettingRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label); Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.surface
+            )
+        )
+    }
+}
+
+// ==================== DIALOGS ====================
+
+@Composable
+fun PrescriptionOptionsDialog(
+    onDismiss: () -> Unit,
+    onAddByImage: () -> Unit,
+    onFillForm: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    "Create New Prescription",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Choose how you want to add the prescription:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(24.dp))
+
+                OutlinedButton(
+                    onClick = onAddByImage,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outline
+                    )
+                ) {
+                    Icon(Icons.Default.Camera, null)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Add by Image")
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Button(
+                    onClick = onFillForm,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Edit, null)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Fill the Form")
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchPrescriptionDialog(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    searchResults: List<PrescriptionEntity>,
+    onPrescriptionSelected: (PrescriptionEntity) -> Unit,
+    onDismiss: () -> Unit,
+    maxImagesReached: Boolean = false
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 500.dp),
+            shape = RoundedCornerShape(24.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Search Prescriptions",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, "Close")
+                    }
+                }
+
+                if (maxImagesReached) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            "Maximum 3 prescription images reached",
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    label = { Text("Search by name, phone, or Rx number") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    enabled = !maxImagesReached,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                if (!maxImagesReached && searchResults.isNotEmpty()) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(searchResults.size) { index ->
+                            val prescription = searchResults[index]
+                            PrescriptionSearchItem(
+                                prescription = prescription,
+                                onClick = { onPrescriptionSelected(prescription) }
+                            )
+                        }
+                    }
+                } else if (!maxImagesReached && searchQuery.length >= 2) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No prescriptions found",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PrescriptionSearchItem(
+    prescription: PrescriptionEntity,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    prescription.patientName.ifBlank { "Image Only" },
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        prescription.prescriptionNumber,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            if (prescription.phone.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    prescription.phone,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
@@ -1382,40 +1798,60 @@ fun SearchUnpaidBillsDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 500.dp)
+                .heightIn(max = 500.dp),
+            shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "Search Unpaid Bills",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Search Unpaid Bills",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, "Close")
+                    }
+                }
+
                 Spacer(Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
                     label = { Text("Search by name or phone") },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Search, null) },
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
+
                 Spacer(Modifier.height(16.dp))
-                if (searchQuery.length < 2) Text(
-                    "Type at least 2 characters to search",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                else if (searchResults.isEmpty()) Text(
-                    "No unpaid bills found",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                else {
+
+                if (searchQuery.length < 2) {
+                    Text(
+                        "Type at least 2 characters to search",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else if (searchResults.isEmpty()) {
+                    Text(
+                        "No unpaid bills found",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(searchResults.size) { index ->
                             val bill = searchResults[index]
                             UnpaidBillItem(
                                 bill = bill,
                                 currency = currency,
-                                onSelect = { onBillSelected(bill) })
+                                onSelect = { onBillSelected(bill) }
+                            )
                         }
                     }
                 }
@@ -1426,8 +1862,12 @@ fun SearchUnpaidBillsDialog(
 
 @Composable
 fun UnpaidBillItem(bill: Bill, currency: String, onSelect: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), onClick = onSelect) {
-        Column(modifier = Modifier.padding(12.dp)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onSelect,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -1437,14 +1877,29 @@ fun UnpaidBillItem(bill: Bill, currency: String, onSelect: () -> Unit) {
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
-                Text(
-                    "# ${bill.invoiceNumber}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        "# ${bill.invoiceNumber}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
-            Text(bill.customerPhone, style = MaterialTheme.typography.bodyMedium)
+
             Spacer(Modifier.height(4.dp))
+
+            Text(
+                bill.customerPhone,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween

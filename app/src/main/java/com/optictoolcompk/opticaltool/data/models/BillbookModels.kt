@@ -333,7 +333,8 @@ fun BillEntity.toBill(items: List<BillItemEntity>): Bill {
         pickupDate = pickupDate,
         prescriptionId = prescriptionId,
         prescriptionNumber = prescriptionNumber,
-        prescriptionImagesPaths = prescriptionImagesPaths?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+        prescriptionImagesPaths = prescriptionImagesPaths?.split(",")?.filter { it.isNotBlank() }
+            ?: emptyList(),
         prescriptionFormData = prescriptionFormData,
         imagesPaths = imagesPaths?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
         createdAt = createdAt,

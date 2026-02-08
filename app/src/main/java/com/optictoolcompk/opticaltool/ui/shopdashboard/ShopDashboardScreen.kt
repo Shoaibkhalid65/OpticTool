@@ -1,57 +1,30 @@
 package com.optictoolcompk.opticaltool.ui.shopdashboard
 
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,299 +35,217 @@ fun ShopDashboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showCurrencyMenu by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
-    // Handle save success
+    // Inside ShopDashboardScreen.kt
+
+// Handle save success and navigate back
     LaunchedEffect(uiState.saveSuccess) {
         if (uiState.saveSuccess) {
-            // Optionally show success message
+            // 1. Show feedback to user
+            Toast.makeText(context, "Settings updated!", Toast.LENGTH_SHORT).show()
+
+            // 2. Clear the state in ViewModel (optional but good practice)
             viewModel.clearSaveSuccess()
+
+            // 3. NAVIGATE BACK
+            onNavigateBack()
         }
     }
 
+    // Add this at the top of ShopDashboardScreen
+    var showExitConfirmation by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = uiState.hasChanges) {
+        showExitConfirmation = true
+    }
+
+    if (showExitConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmation = false },
+            title = { Text("Unsaved Changes") },
+            text = { Text("You have modified your shop settings. Do you want to discard changes and leave?") },
+            confirmButton = {
+                TextButton(onClick = onNavigateBack) {
+                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitConfirmation = false }) {
+                    Text("Keep Editing")
+                }
+            }
+        )
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Shop Dashboard") },
+            CenterAlignedTopAppBar(
+                title = { Text("Shop Profile", fontWeight = FontWeight.Black) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
                 actions = {
-                    TextButton(
-                        onClick = { viewModel.saveSettings() },
-                        enabled = uiState.hasChanges && !uiState.isSaving
-                    ) {
-                        if (uiState.isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text("SAVE")
+                    if (uiState.hasChanges) {
+                        TextButton(onClick = { viewModel.saveSettings() }) {
+                            Text("SAVE", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
             )
         }
     ) { padding ->
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Header Card
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.03f),
+                            MaterialTheme.colorScheme.background
                         )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Store,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "Shop Settings",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "Manage your shop information and preferences",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                            )
-                        }
+                    )
+                )
+        ) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().imePadding(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    // 1. Branding Header
+                    item {
+                        ShopHeaderSection(uiState.shopName)
                     }
-                }
 
-                // Basic Information Card
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+
+                    // 2. Help/Tip Section (Re-integrated and Styled)
+                    item {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                "Basic Information",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            OutlinedTextField(
-                                value = uiState.shopName,
-                                onValueChange = { viewModel.onShopNameChanged(it) },
-                                label = { Text("Shop Name *") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                leadingIcon = { Icon(Icons.Default.Store, null) }
-                            )
-
-                            OutlinedTextField(
-                                value = uiState.shopAddress,
-                                onValueChange = { viewModel.onShopAddressChanged(it) },
-                                label = { Text("Shop Address *") },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 2,
-                                maxLines = 3,
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.LocationOn,
-                                        null,
-                                        modifier = Modifier.align(Alignment.Start)
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Column {
+                                    Text(
+                                        "Public Profile Info",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
                                     )
-                                }
-                            )
-
-                            OutlinedTextField(
-                                value = uiState.shopPhone,
-                                onValueChange = { viewModel.onShopPhoneChanged(it) },
-                                label = { Text("Shop Phone") },
-                                modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                                singleLine = true,
-                                leadingIcon = { Icon(Icons.Default.Phone, null) }
-                            )
-                        }
-                    }
-                }
-
-                // Currency Card
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                "Currency",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Spacer(Modifier.height(12.dp))
-
-                            Box {
-                                OutlinedButton(
-                                    onClick = { showCurrencyMenu = true },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(Icons.Default.AttachMoney, null)
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(
-                                                uiState.currency.ifBlank { "Select Currency" },
-                                                style = MaterialTheme.typography.bodyLarge
-                                            )
-                                        }
-                                        Icon(Icons.Default.ArrowDropDown, null)
-                                    }
-                                }
-
-                                DropdownMenu(
-                                    expanded = showCurrencyMenu,
-                                    onDismissRequest = { showCurrencyMenu = false }
-                                ) {
-                                    listOf("Rs", "₹", "$", "€", "£", "¥").forEach { currency ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    if (currency == uiState.currency) {
-                                                        Icon(
-                                                            Icons.Default.Check,
-                                                            null,
-                                                            modifier = Modifier.size(18.dp),
-                                                            tint = MaterialTheme.colorScheme.primary
-                                                        )
-                                                        Spacer(Modifier.width(8.dp))
-                                                    }
-                                                    Text(currency)
-                                                }
-                                            },
-                                            onClick = {
-                                                viewModel.onCurrencyChanged(currency)
-                                                showCurrencyMenu = false
-                                            }
-                                        )
-                                    }
+                                    Text(
+                                        "These details appear on your PDFs, Prints, and WhatsApp shares. Tap any field to edit.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
                     }
-                }
 
-                // Terms and Conditions Card
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                "Terms & Conditions",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                    // 2. Business Identity Group
+                    item {
+                        SettingsGroup(title = "Business Identity") {
+                            DashboardTextField(
+                                value = uiState.shopName,
+                                onValueChange = { viewModel.onShopNameChanged(it) },
+                                label = "Shop Name",
+                                icon = Icons.Default.Store
                             )
-
-                            Spacer(Modifier.height(8.dp))
-
-                            Text(
-                                "This text will appear at the bottom of all bills",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Spacer(Modifier.height(12.dp))
-
-                            OutlinedTextField(
-                                value = uiState.termsAndConditions,
-                                onValueChange = { viewModel.onTermsAndConditionsChanged(it) },
-                                label = { Text("Terms & Conditions") },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 4,
-                                maxLines = 8,
-                                placeholder = { Text("e.g., All sales are final. Returns accepted within 7 days with receipt.") }
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
+                            DashboardTextField(
+                                value = uiState.shopPhone,
+                                onValueChange = { viewModel.onShopPhoneChanged(it) },
+                                label = "Business Contact",
+                                icon = Icons.Default.Phone,
+                                keyboardType = KeyboardType.Phone
                             )
                         }
                     }
-                }
 
-                // Save Button (Bottom)
-                item {
-                    Button(
-                        onClick = { viewModel.saveSettings() },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = uiState.hasChanges && !uiState.isSaving
-                    ) {
-                        if (uiState.isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
+                    // 3. Location & Localization
+                    item {
+                        SettingsGroup(title = "Location & Currency") {
+                            DashboardTextField(
+                                value = uiState.shopAddress,
+                                onValueChange = { viewModel.onShopAddressChanged(it) },
+                                label = "Physical Address",
+                                icon = Icons.Default.LocationOn,
+                                singleLine = false
                             )
-                            Spacer(Modifier.width(8.dp))
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
+
+                            // Currency Selector
+                            CurrencySelectorRow(
+                                selectedCurrency = uiState.currency,
+                                onClick = { showCurrencyMenu = true }
+                            )
                         }
-                        Text(
-                            if (uiState.isSaving) "Saving..." else "Save Settings",
-                            style = MaterialTheme.typography.labelLarge
-                        )
                     }
-                }
 
-                // Help Text
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    // 4. Billing Footer Settings
+                    item {
+                        SettingsGroup(title = "Receipt Footer") {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    "Terms & Conditions",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                OutlinedTextField(
+                                    value = uiState.termsAndConditions,
+                                    onValueChange = { viewModel.onTermsAndConditionsChanged(it) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    placeholder = { Text("e.g. No refund without receipt", fontSize = 14.sp) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedIndicatorColor = Color.Transparent
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    // 5. Save Action
+                    item {
+                        Button(
+                            onClick = { viewModel.saveSettings() },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            enabled = uiState.hasChanges && !uiState.isSaving,
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                         ) {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Column {
-                                Text(
-                                    "Tip",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "These settings will be used in all your bills and will appear in PDFs, prints, and WhatsApp shares.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            if (uiState.isSaving) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Update Shop Settings", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -363,11 +254,189 @@ fun ShopDashboardScreen(
         }
     }
 
-    // Error handling
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
-            // TODO: Show snackbar with error
-            viewModel.clearError()
+    // Currency Dropdown
+    if (showCurrencyMenu) {
+        CurrencyPickerDialog(
+            onDismiss = { showCurrencyMenu = false },
+            onSelect = {
+                viewModel.onCurrencyChanged(it)
+                showCurrencyMenu = false
+            },
+            current = uiState.currency
+        )
+    }
+}
+
+@Composable
+fun CurrencyPickerDialog(
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit,
+    current: String
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        containerColor = Color.White,
+        title = {
+            Text(
+                "Select Currency",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Black
+            )
+        },
+        text = {
+            // Using a Column to list out the common currencies
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                listOf("Rs", "₹", "$", "€", "£", "¥", "AED", "SAR").forEach { currency ->
+                    val isSelected = currency == current
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(currency) },
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        else Color.Transparent,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = currency,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column {
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
+            letterSpacing = 1.sp
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun DashboardTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: ImageVector,
+    placeholder: String = "",
+    singleLine: Boolean = true,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+        placeholder = { Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = Color.Gray.copy(alpha = 0.5f)) },
+        leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) },
+        // Added Trailing Icon to signal "Editability"
+        trailingIcon = {
+            Icon(
+                Icons.Default.Edit,
+                null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
+        },
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent
+        ),
+        singleLine = singleLine,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+    )
+}
+
+@Composable
+fun ShopHeaderSection(name: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(64.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Store, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+            }
+        }
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(name.ifBlank { "Your Shop" }, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+            Text("Settings & Customization", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        }
+    }
+}
+
+@Composable
+fun CurrencySelectorRow(selectedCurrency: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.AttachMoney, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+            Text("Default Currency", style = MaterialTheme.typography.bodyLarge)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(selectedCurrency, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Default.ArrowDropDown, null, tint = Color.Gray)
         }
     }
 }

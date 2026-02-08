@@ -2,20 +2,20 @@ package com.optictoolcompk.opticaltool.utils
 
 import android.content.ContentValues
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Typeface
 import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.OutputStream
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import com.optictoolcompk.opticaltool.data.models.ClipboardRow
-import kotlin.apply
-import kotlin.collections.forEachIndexed
-import kotlin.io.use
-import kotlin.let
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object ClipboardImageGenerator {
 
@@ -40,7 +40,12 @@ object ClipboardImageGenerator {
             var y = MARGIN
 
             // Title
-            canvas.drawText("Clipboard Order - Page $pageNumber of $totalPages", PAGE_WIDTH / 2, y + 30f, paints.titlePaint)
+            canvas.drawText(
+                "Clipboard Order - Page $pageNumber of $totalPages",
+                PAGE_WIDTH / 2,
+                y + 30f,
+                paints.titlePaint
+            )
             y += HEADER_HEIGHT
 
             // Table Header Background
@@ -68,19 +73,35 @@ object ClipboardImageGenerator {
                 }
 
                 canvas.drawText(row.globalIndex.toString(), colSr, y + 28f, paints.rowTextPaint)
-                canvas.drawText(row.sectionName, colQuality + 50f, y + 28f, paints.rowTextPaintCenter)
-                canvas.drawText(row.getFormattedNumber(), colNumber + 50f, y + 28f, paints.rowTextPaintCenter)
+                canvas.drawText(
+                    row.sectionName,
+                    colQuality + 50f,
+                    y + 28f,
+                    paints.rowTextPaintCenter
+                )
+                canvas.drawText(
+                    row.getFormattedNumber(),
+                    colNumber + 50f,
+                    y + 28f,
+                    paints.rowTextPaintCenter
+                )
                 canvas.drawText(row.pairs.toString(), colPairs, y + 28f, paints.rowTextPaintRight)
 
                 // Row Divider
-                canvas.drawLine(MARGIN, y + ROW_HEIGHT, PAGE_WIDTH - MARGIN, y + ROW_HEIGHT, paints.dividerPaint)
-                
+                canvas.drawLine(
+                    MARGIN,
+                    y + ROW_HEIGHT,
+                    PAGE_WIDTH - MARGIN,
+                    y + ROW_HEIGHT,
+                    paints.dividerPaint
+                )
+
                 y += ROW_HEIGHT
             }
 
             // Save to Gallery
             saveBitmapToGallery(context, bitmap, "Clipboard_Order_P$pageNumber")
-            
+
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Screenshot saved to Gallery", Toast.LENGTH_SHORT).show()
             }

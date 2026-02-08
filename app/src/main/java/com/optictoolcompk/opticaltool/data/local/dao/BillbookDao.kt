@@ -1,9 +1,16 @@
 package com.optictoolcompk.opticaltool.data.local.dao
 
 
-
-import androidx.room.*
-import com.optictoolcompk.opticaltool.data.models.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
+import com.optictoolcompk.opticaltool.data.models.BillEntity
+import com.optictoolcompk.opticaltool.data.models.BillItemEntity
+import com.optictoolcompk.opticaltool.data.models.ShopSettingsEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -48,12 +55,14 @@ interface BillDao {
     suspend fun updateBill(bill: BillEntity)
 
     // method to settle amount of the previous bill when we add it into the current bill
-    @Query("""
+    @Query(
+        """
         UPDATE bills
         SET remainingAmount = 0,
             remainingNote = :note
         WHERE id = :billId
-    """)
+    """
+    )
     suspend fun settleBillById(
         billId: Long,
         note: String
@@ -80,40 +89,48 @@ interface BillDao {
 
     // ==================== SEARCH & FILTER ====================
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM bills 
         WHERE (customerName LIKE '%' || :query || '%' 
             OR customerPhone LIKE '%' || :query || '%'
             OR invoiceNumber LIKE '%' || :query || '%'
             OR invoiceDate LIKE '%' || :query || '%')
         ORDER BY createdAt DESC
-    """)
+    """
+    )
     fun searchBills(query: String): Flow<List<BillEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM bills 
         WHERE remainingAmount > 0
         ORDER BY createdAt DESC
-    """)
+    """
+    )
     fun getUnpaidBills(): Flow<List<BillEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM bills 
         WHERE remainingAmount > 0
         AND (customerName LIKE '%' || :query || '%' 
             OR customerPhone LIKE '%' || :query || '%'
             OR invoiceNumber LIKE '%' || :query || '%')
         ORDER BY createdAt DESC
-    """)
+    """
+    )
     fun searchUnpaidBills(query: String): Flow<List<BillEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM bills 
         WHERE remainingAmount > 0
         AND (customerName LIKE '%' || :query || '%' 
             OR customerPhone LIKE '%' || :query || '%')
         LIMIT 20
-    """)
+    """
+    )
     suspend fun searchUnpaidBillsForPreviousAmount(query: String): List<BillEntity>
 
     // ==================== STATISTICS ====================
@@ -135,11 +152,13 @@ interface BillDao {
 
     // ==================== INVOICE NUMBER ====================
 
-    @Query("""
+    @Query(
+        """
         SELECT MAX(CAST(invoiceNumber AS INTEGER)) 
         FROM bills 
         WHERE invoiceNumber GLOB '[0-9]*'
-    """)
+    """
+    )
     suspend fun getMaxInvoiceNumber(): Int?
 
     // ==================== CLOUD SYNC (Future) ====================

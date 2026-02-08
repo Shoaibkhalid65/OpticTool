@@ -1,8 +1,15 @@
 package com.optictoolcompk.opticaltool.data.local.dao
 
 
-
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Embedded
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Relation
+import androidx.room.Transaction
+import androidx.room.Update
 import com.optictoolcompk.opticaltool.data.models.NotebookRowEntity
 import com.optictoolcompk.opticaltool.data.models.NotebookSectionEntity
 import kotlinx.coroutines.flow.Flow
@@ -94,7 +101,8 @@ interface NotebookSectionDao {
 
     // ==================== CLIPBOARD (COPY) OPERATIONS ====================
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM notebook_rows 
         WHERE isCopy = 1 
         ORDER BY 
@@ -104,7 +112,8 @@ interface NotebookSectionDao {
             END,
             CAST(sphValue AS REAL) ASC,
             CAST(cylValue AS REAL) ASC
-    """)
+    """
+    )
     fun getAllCopiedRows(): Flow<List<NotebookRowEntity>>
 
     @Query("SELECT COUNT(*) FROM notebook_rows WHERE isCopy = 1")
@@ -156,7 +165,10 @@ interface NotebookSectionDao {
     // ==================== BATCH OPERATIONS ====================
 
     @Transaction
-    suspend fun replaceSectionWithRows(section: NotebookSectionEntity, rows: List<NotebookRowEntity>) {
+    suspend fun replaceSectionWithRows(
+        section: NotebookSectionEntity,
+        rows: List<NotebookRowEntity>
+    ) {
         // Delete existing section and rows (cascade will handle rows)
         section.id.let { sectionId ->
             if (sectionId > 0) {

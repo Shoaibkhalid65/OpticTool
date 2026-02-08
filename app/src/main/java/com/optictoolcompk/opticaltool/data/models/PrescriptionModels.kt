@@ -36,7 +36,7 @@ data class PrescriptionEntity(
     val checkedBy: String,
 
     // Image path (stored in internal storage)
-    val prescriptionImagePath: String=""
+    val prescriptionImagePath: String = ""
 )
 
 

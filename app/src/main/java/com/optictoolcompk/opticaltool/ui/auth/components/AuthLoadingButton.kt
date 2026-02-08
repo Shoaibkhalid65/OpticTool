@@ -36,7 +36,7 @@ fun AuthLoadingButton(
         onClick = onClick,
         enabled = !isLoading && enabled,
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,

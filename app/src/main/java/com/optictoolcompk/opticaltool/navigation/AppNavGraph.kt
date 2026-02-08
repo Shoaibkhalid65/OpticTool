@@ -99,19 +99,47 @@ fun AppNavGraph(
 
         composable(Screen.SignIn.route) {
             Scaffold(
-                snackbarHost = { SnackbarHost(snackbarHostState) }
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = {
+                    TopAppBar(
+                        title = { Text("User Login", fontWeight = FontWeight.ExtraBold) },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
             ) { _ ->
                 SignInScreen(
                     onSignUpClick = { navController.navigate(Screen.SignUp.route) },
                     onForgotPasswordClick = { navController.navigate(Screen.RequestReset.route) },
-                    authViewModel = authViewModel
+                    authViewModel = authViewModel,
                 )
             }
         }
 
         composable(Screen.SignUp.route) {
             Scaffold(
-                snackbarHost = { SnackbarHost(snackbarHostState) }
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Join Optical Tool", fontWeight = FontWeight.ExtraBold) },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    Icons.AutoMirrored.Default.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
             ) { _ ->
                 SignUpScreen(
                     onBack = { navController.popBackStack() },
@@ -125,7 +153,25 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email")!!
             Scaffold(
-                snackbarHost = { SnackbarHost(snackbarHostState) }
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Verification", fontWeight = FontWeight.ExtraBold) },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    Icons.AutoMirrored.Default.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
             ) { _ ->
                 ConfirmEmailScreen(
                     email = email,
@@ -142,7 +188,25 @@ fun AppNavGraph(
         }
         composable(Screen.RequestReset.route) {
             Scaffold(
-                snackbarHost = { SnackbarHost(snackbarHostState) }
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Account Recovery", fontWeight = FontWeight.ExtraBold) },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    Icons.AutoMirrored.Default.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
             ) { _ ->
                 ForgotPasswordScreen(
                     authViewModel,
@@ -158,7 +222,25 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email")!!
             Scaffold(
-                snackbarHost = { SnackbarHost(snackbarHostState) }
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Security Check", fontWeight = FontWeight.ExtraBold) },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    Icons.AutoMirrored.Default.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
             ) { _ ->
                 OtpVerificationScreen(
                     email = email,
@@ -171,7 +253,25 @@ fun AppNavGraph(
         }
         composable(Screen.NewPassword.route) {
             Scaffold(
-                snackbarHost = { SnackbarHost(snackbarHostState) }
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Update Security", fontWeight = FontWeight.ExtraBold) },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    Icons.AutoMirrored.Default.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
             ) { _ ->
                 NewPasswordScreen(authViewModel)
             }
@@ -184,7 +284,10 @@ fun AppNavGraph(
                         title = { Text("Profile", fontWeight = FontWeight.ExtraBold) },
                         navigationIcon = {
                             IconButton(onClick = { navController.popBackStack() }) {
-                                Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                                Icon(
+                                    Icons.AutoMirrored.Default.ArrowBack,
+                                    contentDescription = "Back"
+                                )
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -197,7 +300,7 @@ fun AppNavGraph(
             ) { padding ->
                 ProfileScreen(
                     authViewModel = authViewModel,
-                    padding=padding
+                    padding = padding
                 )
             }
         }
@@ -239,7 +342,8 @@ fun AppNavGraph(
                             add = pres.addPower
                         )
                     )
-                }
+                },
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -266,7 +370,9 @@ fun AppNavGraph(
                         )
                     )
                 },
-                onNavigateToShopDashboard = { navController.navigate(Screen.ShopDashboardScreen.route) }
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -292,13 +398,16 @@ fun AppNavGraph(
         }
 
         composable(Screen.GlassesNotebookScreen.route) {
-            GlassesNotebookScreen()
+            GlassesNotebookScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
 
     }
 }
-//}
 
 @Composable
 private fun InitialStateEffect(

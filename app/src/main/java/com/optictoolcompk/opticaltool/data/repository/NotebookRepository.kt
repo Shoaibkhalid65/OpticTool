@@ -1,9 +1,19 @@
 package com.optictoolcompk.opticaltool.data.repository
 
-import com.optictoolcompk.opticaltool.data.local.dao.NotebookSectionDao
 import android.content.Context
+import com.optictoolcompk.opticaltool.data.local.dao.NotebookSectionDao
 import com.optictoolcompk.opticaltool.data.local.dao.SectionWithRows
-import com.optictoolcompk.opticaltool.data.models.*
+import com.optictoolcompk.opticaltool.data.models.ClipboardData
+import com.optictoolcompk.opticaltool.data.models.ClipboardRow
+import com.optictoolcompk.opticaltool.data.models.NotebookMode
+import com.optictoolcompk.opticaltool.data.models.NotebookRow
+import com.optictoolcompk.opticaltool.data.models.NotebookRowEntity
+import com.optictoolcompk.opticaltool.data.models.NotebookSection
+import com.optictoolcompk.opticaltool.data.models.NotebookSectionEntity
+import com.optictoolcompk.opticaltool.data.models.NotebookStatistics
+import com.optictoolcompk.opticaltool.data.models.getDefaultSections
+import com.optictoolcompk.opticaltool.data.models.toEntity
+import com.optictoolcompk.opticaltool.data.models.toSection
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -173,15 +183,17 @@ class NotebookRepository @Inject constructor(
             val entity = notebookDao.getRowById(row.id)
                 ?: return Result.failure(Exception("Row not found"))
 
-            notebookDao.updateRow(entity.copy(
-                sphValue = row.sphValue,
-                cylValue = row.cylValue,
-                pairs = row.pairs,
-                isCopy = row.isCopy,
-                isOrdered = row.isOrdered,
-                isDelete = row.isDelete,
-                updatedAt = System.currentTimeMillis()
-            ))
+            notebookDao.updateRow(
+                entity.copy(
+                    sphValue = row.sphValue,
+                    cylValue = row.cylValue,
+                    pairs = row.pairs,
+                    isCopy = row.isCopy,
+                    isOrdered = row.isOrdered,
+                    isDelete = row.isDelete,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -194,10 +206,12 @@ class NotebookRepository @Inject constructor(
             val row = notebookDao.getRowById(rowId)
                 ?: return Result.failure(Exception("Row not found"))
 
-            notebookDao.updateRow(row.copy(
-                isCopy = !row.isCopy,
-                updatedAt = System.currentTimeMillis()
-            ))
+            notebookDao.updateRow(
+                row.copy(
+                    isCopy = !row.isCopy,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -210,10 +224,12 @@ class NotebookRepository @Inject constructor(
             val row = notebookDao.getRowById(rowId)
                 ?: return Result.failure(Exception("Row not found"))
 
-            notebookDao.updateRow(row.copy(
-                isOrdered = !row.isOrdered,
-                updatedAt = System.currentTimeMillis()
-            ))
+            notebookDao.updateRow(
+                row.copy(
+                    isOrdered = !row.isOrdered,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -226,10 +242,12 @@ class NotebookRepository @Inject constructor(
             val row = notebookDao.getRowById(rowId)
                 ?: return Result.failure(Exception("Row not found"))
 
-            notebookDao.updateRow(row.copy(
-                isDelete = !row.isDelete,
-                updatedAt = System.currentTimeMillis()
-            ))
+            notebookDao.updateRow(
+                row.copy(
+                    isDelete = !row.isDelete,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
 
             Result.success(Unit)
         } catch (e: Exception) {
