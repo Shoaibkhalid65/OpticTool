@@ -276,7 +276,7 @@ fun CurrencyPickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Text(
                 "Select Currency",

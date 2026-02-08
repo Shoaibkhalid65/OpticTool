@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Whatsapp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -288,11 +289,10 @@ fun MyBillsScreen(
                                     shopSettings
                                 )
                                 receiptResult.imageUri?.let { uri ->
-                                    ReceiptSharingHelper.shareViaWhatsApp(
+                                    ReceiptSharingHelper.shareReceiptImage(
                                         context,
                                         uri,
                                         bill.invoiceNumber,
-                                        bill.customerPhone
                                     )
                                 }
                             }

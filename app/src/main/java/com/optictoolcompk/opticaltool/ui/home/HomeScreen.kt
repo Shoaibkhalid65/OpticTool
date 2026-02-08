@@ -3,6 +3,7 @@ package com.optictoolcompk.opticaltool.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -46,7 +47,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.LottieProperty
@@ -172,7 +175,7 @@ fun WelcomeSection() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -214,6 +217,72 @@ fun WelcomeSection() {
     }
 }
 
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun ToolCard(
+//    tool: ToolItem,
+//    onClick: () -> Unit
+//) {
+//    Card(
+//        onClick = onClick,
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .aspectRatio(1f),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+//        colors = CardDefaults.cardColors(
+//            containerColor = MaterialTheme.colorScheme.surface
+//        ),
+//        shape = RoundedCornerShape(24.dp)
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(20.dp),
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            verticalArrangement = Arrangement.Center
+//        ) {
+//            // Icon with colored background
+//            Box(
+//                modifier = Modifier
+//                    .size(72.dp)
+//                    .clip(CircleShape)
+//                    .background(tool.backgroundColor),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Icon(
+//                    tool.icon,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(36.dp),
+//                    tint = tool.iconColor
+//                )
+//            }
+//
+//            Spacer(Modifier.height(12.dp))
+//
+//            // Title
+//            Text(
+//                tool.title,
+//                style = MaterialTheme.typography.titleMedium,
+//                fontWeight = FontWeight.Bold,
+//                color = MaterialTheme.colorScheme.onSurface,
+//                maxLines = 1,
+//                overflow = TextOverflow.Ellipsis
+//            )
+//
+//            Spacer(Modifier.height(4.dp))
+//
+//            // Subtitle
+//            Text(
+//                tool.subtitle,
+//                style = MaterialTheme.typography.bodySmall,
+//                color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                maxLines = 1,
+//                overflow = TextOverflow.Ellipsis
+//            )
+//        }
+//    }
+//}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToolCard(
@@ -231,47 +300,65 @@ fun ToolCard(
         ),
         shape = RoundedCornerShape(24.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Icon with colored background
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(tool.backgroundColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    tool.icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(36.dp),
-                    tint = tool.iconColor
-                )
+            with(LocalDensity.current) {
+                val isSmallScreen = maxWidth < 160.dp
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(if (isSmallScreen) 12.dp else 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Icon with colored background
+                    Box(
+                        modifier = Modifier
+                            .size(if (isSmallScreen) 48.dp else 72.dp)
+                            .clip(CircleShape)
+                            .background(tool.backgroundColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            tool.icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(if (isSmallScreen) 24.dp else 36.dp),
+                            tint = tool.iconColor
+                        )
+                    }
+
+                    Spacer(Modifier.height(if (isSmallScreen) 6.dp else 12.dp))
+
+                    // Title
+                    Text(
+                        tool.title,
+                        style = if (isSmallScreen)
+                            MaterialTheme.typography.titleSmall
+                        else
+                            MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    // Subtitle
+                    Text(
+                        tool.subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = if (isSmallScreen) 10.sp else 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
             }
-
-            Spacer(Modifier.height(12.dp))
-
-            // Title
-            Text(
-                tool.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(Modifier.height(4.dp))
-
-            // Subtitle
-            Text(
-                tool.subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
