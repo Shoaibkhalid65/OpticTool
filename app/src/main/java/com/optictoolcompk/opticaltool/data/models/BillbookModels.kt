@@ -169,7 +169,7 @@ data class BillItem(
     val id: Long = 0,
     val itemName: String = "",
     val quantity: Int = 1,
-    val price: Double = 0.0
+    val price: Double=0.0
 ) {
     val total: Double
         get() = quantity * price
@@ -231,10 +231,10 @@ data class IpdData(
 )
 
 data class ShopSettings(
-    val shopName: String = "Ansari Optical Service",
-    val shopAddress: String = "near Ahle Hadis Masjid Rajan Pur",
-    val shopPhone: String = "03340064776",
-    val termsAndConditions: String = "",
+    val shopName: String = "Your Optical Shop",
+    val shopAddress: String = "Shop Address",
+    val shopPhone: String = "0300-0000000",
+    val termsAndConditions: String = "Goods once sold will not be returned.",
     val currency: String = "Rs"
 )
 
@@ -272,7 +272,7 @@ data class BillDisplaySettings(
     val showPrescription: Boolean = true,
     val showIpd: Boolean = true,
     val showCheckedBy: Boolean = true,
-    val autoSavePrescriptions: Boolean = false,
+    val autoSavePrescriptions: Boolean = true,
     val showUploadCaptureImages: Boolean = true
 )
 

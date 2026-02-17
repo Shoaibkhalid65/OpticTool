@@ -2,6 +2,7 @@ package com.optictoolcompk.opticaltool.ui.notebook
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.optictoolcompk.opticaltool.data.datastore.NotebookPreferencesManager
 import com.optictoolcompk.opticaltool.data.models.ClipboardData
 import com.optictoolcompk.opticaltool.data.models.NotebookMode
 import com.optictoolcompk.opticaltool.data.models.NotebookSection
@@ -11,13 +12,24 @@ import com.optictoolcompk.opticaltool.data.repository.NotebookRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class GlassesNotebookViewModel @Inject constructor(
-    private val repository: NotebookRepository
+    private val repository: NotebookRepository,
+    private val preferencesManager: NotebookPreferencesManager
 ) : ViewModel() {
 
     // ==================== STATE ====================
@@ -34,8 +46,36 @@ class GlassesNotebookViewModel @Inject constructor(
     private val _statistics = MutableStateFlow(NotebookStatistics())
     val statistics: StateFlow<NotebookStatistics> = _statistics.asStateFlow()
 
-    private val _selectedSectionId = MutableStateFlow<Long?>(null)
-    val selectedSectionId: StateFlow<Long?> = _selectedSectionId.asStateFlow()
+    // ✅ Use DataStore for selected section persistence
+    val selectedSectionId: StateFlow<Long> = combine(
+        preferencesManager.selectedSectionIdFlow,
+        _sections
+    ) { savedSectionId, sectionsList ->
+        when {
+            // If "View All Sections" was selected, keep it
+            savedSectionId == NotebookPreferencesManager.VIEW_ALL_SECTIONS_ID -> savedSectionId
+
+            // If a specific section was selected and still exists, keep it
+            savedSectionId > 0 && sectionsList.any { it.id == savedSectionId } -> savedSectionId
+
+            // If no selection or saved section doesn't exist anymore, default to first section
+            sectionsList.isNotEmpty() -> {
+                val firstSectionId = sectionsList.first().id
+                // Save the first section as default
+                viewModelScope.launch {
+                    preferencesManager.saveSelectedSectionId(firstSectionId)
+                }
+                firstSectionId
+            }
+
+            // No sections available
+            else -> NotebookPreferencesManager.NO_SELECTION_ID
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = NotebookPreferencesManager.NO_SELECTION_ID
+    )
 
     private val _currentClipboardPage = MutableStateFlow(1)
 
@@ -53,14 +93,10 @@ class GlassesNotebookViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             // 1. Initialize DB and load Sections (Critical Path)
             repository.initializeDefaultSectionsIfNeeded()
-            
+
             repository.getAllSections().collect { sectionsList ->
                 _sections.value = sectionsList
 
-                if (_selectedSectionId.value == null && sectionsList.isNotEmpty()) {
-                    _selectedSectionId.value = sectionsList.first().id
-                }
-                
                 // Once sections are loaded, we can stop the initial screen loading glitch
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -85,11 +121,16 @@ class GlassesNotebookViewModel @Inject constructor(
     // ==================== SECTION OPERATIONS ====================
 
     fun selectSection(sectionId: Long?) {
-        _selectedSectionId.value = sectionId
+        viewModelScope.launch {
+            val idToSave = sectionId ?: NotebookPreferencesManager.NO_SELECTION_ID
+            preferencesManager.saveSelectedSectionId(idToSave)
+        }
     }
 
     fun selectViewAllSections() {
-        _selectedSectionId.value = -1L
+        viewModelScope.launch {
+            preferencesManager.saveSelectedSectionId(NotebookPreferencesManager.VIEW_ALL_SECTIONS_ID)
+        }
     }
 
     fun createSection(name: String, mode: NotebookMode) {
@@ -98,7 +139,8 @@ class GlassesNotebookViewModel @Inject constructor(
 
             repository.createSection(name, mode).fold(
                 onSuccess = { id ->
-                    _selectedSectionId.value = id
+                    // ✅ Automatically select the newly created section
+                    preferencesManager.saveSelectedSectionId(id)
                     showToast("Section '$name' created")
                     refreshStatistics()
                 },
@@ -146,9 +188,12 @@ class GlassesNotebookViewModel @Inject constructor(
 
             repository.deleteSection(sectionId).fold(
                 onSuccess = {
-                    if (_selectedSectionId.value == sectionId) {
+                    // ✅ If deleted section was selected, switch to first available section
+                    if (selectedSectionId.value == sectionId) {
                         val remainingSections = _sections.value.filter { it.id != sectionId }
-                        _selectedSectionId.value = remainingSections.firstOrNull()?.id
+                        val newSelectedId = remainingSections.firstOrNull()?.id
+                            ?: NotebookPreferencesManager.NO_SELECTION_ID
+                        preferencesManager.saveSelectedSectionId(newSelectedId)
                     }
 
                     showToast("Section '$sectionName' deleted")
@@ -163,8 +208,10 @@ class GlassesNotebookViewModel @Inject constructor(
 
     fun moveSectionUp(sectionId: Long) {
         viewModelScope.launch {
+            val section = _sections.value.find { it.id == sectionId }
+            val sectionName = section?.name ?: "Section"
             repository.moveSectionUp(sectionId).fold(
-                onSuccess = { },
+                onSuccess = { showToast("$sectionName Section move upward")},
                 onFailure = { error ->
                     showToast("Error: ${error.message}")
                 }
@@ -174,8 +221,10 @@ class GlassesNotebookViewModel @Inject constructor(
 
     fun moveSectionDown(sectionId: Long) {
         viewModelScope.launch {
+            val section = _sections.value.find { it.id == sectionId }
+            val sectionName = section?.name ?: "Section"
             repository.moveSectionDown(sectionId).fold(
-                onSuccess = { },
+                onSuccess = { showToast("$sectionName Section move downward")},
                 onFailure = { error ->
                     showToast("Error: ${error.message}")
                 }
@@ -185,7 +234,13 @@ class GlassesNotebookViewModel @Inject constructor(
 
     // ==================== ROW OPERATIONS ====================
 
-    fun addRow(sectionId: Long, sphValue: String, cylValue: String, pairs: Int, mode: NotebookMode) {
+    fun addRow(
+        sectionId: Long,
+        sphValue: String,
+        cylValue: String,
+        pairs: Int,
+        mode: NotebookMode
+    ) {
         viewModelScope.launch {
             repository.addRow(sectionId, sphValue, cylValue, pairs, mode).fold(
                 onSuccess = {
@@ -404,7 +459,11 @@ class GlassesNotebookViewModel @Inject constructor(
 
             repository.resetToDefault().fold(
                 onSuccess = {
-                    _selectedSectionId.value = _sections.value.firstOrNull()?.id
+                    // ✅ Reset to first section after clearing
+                    val firstSectionId = _sections.value.firstOrNull()?.id
+                        ?: NotebookPreferencesManager.NO_SELECTION_ID
+                    preferencesManager.saveSelectedSectionId(firstSectionId)
+
                     showToast("Reset to default sections")
                     refreshStatistics()
                 },
@@ -430,8 +489,9 @@ class GlassesNotebookViewModel @Inject constructor(
     }
 
     fun getSelectedSection(): NotebookSection? {
-        val selectedId = _selectedSectionId.value ?: return null
-        if (selectedId == -1L) return null
+        val selectedId = selectedSectionId.value
+        if (selectedId == NotebookPreferencesManager.VIEW_ALL_SECTIONS_ID ||
+            selectedId == NotebookPreferencesManager.NO_SELECTION_ID) return null
         return _sections.value.find { it.id == selectedId }
     }
 

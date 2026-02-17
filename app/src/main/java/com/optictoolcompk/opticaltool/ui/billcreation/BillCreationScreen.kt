@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Panorama
 import androidx.compose.material.icons.filled.Person
@@ -57,6 +58,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -72,8 +74,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -267,6 +271,74 @@ fun BillCreationScreen(
                 Text("Add Item")
             }
 
+//            // Prescription Sections
+//            if (displaySettings.showPrescription) {
+//                SectionHeader(
+//                    title = "Add New Prescription",
+//                    icon = Icons.Default.Edit
+//                )
+//                AddNewPrescriptionSection(
+//                    prescriptionFormData = uiState.prescriptionFormData,
+//                    onCreateNewClick = { viewModel.onShowPrescriptionOptionsDialog() },
+//                    onRemovePrescription = { viewModel.onClearPrescriptionForm() },
+//                    isFormVisible = uiState.showPrescriptionFormCard
+//                )
+//
+//                if (uiState.showPrescriptionFormCard) {
+//                    PrescriptionFormCard(
+//                        formData = uiState.prescriptionFormInputs,
+//                        onFormDataChange = { viewModel.onPrescriptionFormInputChanged(it) },
+//                        onDismiss = { viewModel.onHidePrescriptionForm() },
+//                        displaySettings = displaySettings,
+//                        shouldTriggerCapture = uiState.shouldTriggerCapture,
+//                        onCaptureComplete = { bitmap ->
+//                            viewModel.onSavePrescriptionForm(context, bitmap)
+//                        }
+//                    )
+//                }
+//            }
+//
+//            // Search Saved Prescriptions
+//            SectionHeader(
+//                title = "Search Saved Prescriptions",
+//                subtitle = "${uiState.prescriptionImagesPaths.size}/3 added",
+//                icon = Icons.Default.Search
+//            )
+//            SearchSavedPrescriptionsSection(
+//                prescriptionImages = uiState.prescriptionImagesPaths,
+//                onSearchSavedClick = { viewModel.onShowPrescriptionSearchDialog() },
+//                onRemoveImage = { index -> viewModel.onRemovePrescriptionImage(index) }
+//            )
+
+            // Previous Unpaid Bills
+            SearchUnpaidBillsCard(onClick = { viewModel.onShowUnpaidBillsDialog() })
+
+            // Totals
+            TotalsCard(
+                totalAmount = uiState.totalAmount,
+                discount = uiState.discount,
+                onDiscountChange = { viewModel.onDiscountChanged(it) },
+                advance = uiState.advance,
+                onAdvanceChange = { viewModel.onAdvanceChanged(it) },
+                advance2 = uiState.advance2,
+                onAdvance2Change = { viewModel.onAdvance2Changed(it) },
+                advance2Date = uiState.advance2Date,
+                advance3 = uiState.advance3,
+                onAdvance3Change = { viewModel.onAdvance3Changed(it) },
+                advance3Date = uiState.advance3Date,
+                previousAmount = uiState.previousAmount.toString(),
+                remainingAmount = uiState.remainingAmount,
+                remainingNote = uiState.remainingNote,
+                currency = shopSettings.currency
+            )
+
+            // Pickup Date
+            PickupDateCard(
+                pickupDate = uiState.pickupDate,
+                onChange = { viewModel.onPickupDateChanged(it) }
+            )
+
+
             // Prescription Sections
             if (displaySettings.showPrescription) {
                 SectionHeader(
@@ -304,34 +376,6 @@ fun BillCreationScreen(
                 prescriptionImages = uiState.prescriptionImagesPaths,
                 onSearchSavedClick = { viewModel.onShowPrescriptionSearchDialog() },
                 onRemoveImage = { index -> viewModel.onRemovePrescriptionImage(index) }
-            )
-
-            // Previous Unpaid Bills
-            SearchUnpaidBillsCard(onClick = { viewModel.onShowUnpaidBillsDialog() })
-
-            // Totals
-            TotalsCard(
-                totalAmount = uiState.totalAmount,
-                discount = uiState.discount,
-                onDiscountChange = { viewModel.onDiscountChanged(it) },
-                advance = uiState.advance,
-                onAdvanceChange = { viewModel.onAdvanceChanged(it) },
-                advance2 = uiState.advance2,
-                onAdvance2Change = { viewModel.onAdvance2Changed(it) },
-                advance2Date = uiState.advance2Date,
-                advance3 = uiState.advance3,
-                onAdvance3Change = { viewModel.onAdvance3Changed(it) },
-                advance3Date = uiState.advance3Date,
-                previousAmount = uiState.previousAmount.toString(),
-                remainingAmount = uiState.remainingAmount,
-                remainingNote = uiState.remainingNote,
-                currency = shopSettings.currency
-            )
-
-            // Pickup Date
-            PickupDateCard(
-                pickupDate = uiState.pickupDate,
-                onChange = { viewModel.onPickupDateChanged(it) }
             )
 
             // Images
@@ -651,35 +695,65 @@ fun BillItemCard(
 
             Spacer(Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                var priceText by remember(item.id) {
+                    mutableStateOf(
+                        if (item.price == 0.0) ""
+                        else item.price.toInt().toString() // show integer first
+                    )
+                }
                 OutlinedTextField(
                     value = if (item.quantity == 0) "" else item.quantity.toString(),
                     onValueChange = { onItemChange(item.copy(quantity = it.toIntOrNull() ?: 0)) },
                     label = { Text("Qty") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(0.7f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
+//                OutlinedTextField(
+//                    value =  item.price.toString(),
+//                    onValueChange = { onItemChange(item.copy(price = it.toDoubleOrNull() ?: 0.0)) },
+//                    label = { Text("Price($currency)") },
+//                    modifier = Modifier.weight(1.2f),
+//                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+//                    singleLine = true,
+//                    shape = RoundedCornerShape(12.dp),
+////                    prefix = { Text("$currency ") }
+//                )
                 OutlinedTextField(
-                    value = if (item.price == 0.0) "" else item.price.toString(),
-                    onValueChange = { onItemChange(item.copy(price = it.toDoubleOrNull() ?: 0.0)) },
-                    label = { Text("Price") },
-                    modifier = Modifier.weight(1f),
+                    value = priceText,
+                    onValueChange = { newValue ->
+
+                        if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
+
+                            priceText = newValue
+
+                            val parsed = newValue.toDoubleOrNull()
+
+                            onItemChange(
+                                item.copy(
+                                    price = parsed ?: 0.0   // ✅ update even when empty
+                                )
+                            )
+                        }
+                    },
+                    label = { Text("Price ($currency)") },
+                    modifier = Modifier.weight(1.2f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    prefix = { Text("$currency ") }
+                    shape = RoundedCornerShape(12.dp)
                 )
+
                 OutlinedTextField(
-                    value = String.format(Locale.getDefault(), "%.0f", item.total),
+                    value =
+                        String.format(Locale.getDefault(), "%.2f", item.total),
                     onValueChange = { },
-                    label = { Text("Total") },
-                    modifier = Modifier.weight(1f),
+                    label = { Text("Total($currency)") },
+                    modifier = Modifier.weight(1.2f),
                     readOnly = true,
                     enabled = false,
                     shape = RoundedCornerShape(12.dp),
-                    prefix = { Text("$currency ") }
                 )
             }
         }
@@ -1051,7 +1125,7 @@ fun PrescriptionFooter(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (showIpd) {
@@ -1079,28 +1153,50 @@ fun PrescriptionFooter(
         }
 
         if (showCheckedBy) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+//            Row(
+//                verticalAlignment = Alignment.CenterVertically,
+//                modifier = Modifier.weight(1f),
+//                horizontalArrangement = Arrangement.End
+//            ) {
+//                Text(
+//                    "Checked by :",
+//                    fontSize = 15.sp,
+//                    fontWeight = FontWeight.Bold,
+//                    color = Color.Black
+//                )
+//                Spacer(modifier = Modifier.width(8.dp))
+//                BasicTextField(
+//                    value = checkedBy,
+//                    onValueChange = onCheckedByChange,
+//                    modifier = Modifier
+//                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+//                        .padding(horizontal = 10.dp, vertical = 12.dp),
+//                    textStyle = TextStyle(fontSize = 15.sp),
+//                    singleLine = true
+//                )
+//            }
+            OutlinedTextField(
+                value = checkedBy,
+                onValueChange = onCheckedByChange,
+                label = { Text("Checked by") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.HealthAndSafety,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Text(
-                    "Checked by :",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color.LightGray,
+                    focusedLabelColor = Color.Black,
+                    unfocusedLabelColor = Color.Gray
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                BasicTextField(
-                    value = checkedBy,
-                    onValueChange = onCheckedByChange,
-                    modifier = Modifier
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 12.dp),
-                    textStyle = TextStyle(fontSize = 15.sp),
-                    singleLine = true
-                )
-            }
+            )
         }
     }
 }
@@ -1224,7 +1320,7 @@ fun TotalsCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "$currency ${String.format(Locale.getDefault(), "%.0f", totalAmount)}",
+                        "$currency ${totalAmount.formatAmount()}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary
@@ -1327,12 +1423,12 @@ fun TotalsCard(
                 ) {
                     Text(
                         "Remaining:",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "$currency ${String.format(Locale.getDefault(), "%.0f", remainingAmount)}",
-                        style = MaterialTheme.typography.headlineMedium,
+                        "$currency ${remainingAmount.formatAmount()}",
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = if (remainingAmount > 0) MaterialTheme.colorScheme.error
                         else Color(0xFF4CAF50)
@@ -1399,7 +1495,7 @@ fun PickupDateCard(pickupDate: String?, onChange: (String?) -> Unit) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                "Pickup Date (Optional)",
+                "Pickup Date",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -1911,11 +2007,7 @@ fun UnpaidBillItem(bill: Bill, currency: String, onSelect: () -> Unit) {
                 )
                 Text(
                     "Remaining: $currency ${
-                        String.format(
-                            Locale.getDefault(),
-                            "%.0f",
-                            bill.remainingAmount
-                        )
+                        bill.remainingAmount.formatAmount()
                     }",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
@@ -1925,3 +2017,12 @@ fun UnpaidBillItem(bill: Bill, currency: String, onSelect: () -> Unit) {
         }
     }
 }
+
+fun Double.formatAmount(): String {
+    return if (this % 1.0 == 0.0) {
+        "%.0f".format(this)   // no decimals
+    } else {
+        "%.2f".format(this)   // show 2 decimals
+    }
+}
+

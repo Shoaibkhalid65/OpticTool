@@ -89,6 +89,7 @@ import coil3.compose.AsyncImage
 import com.optictoolcompk.opticaltool.data.models.Bill
 import com.optictoolcompk.opticaltool.data.models.BillSortOption
 import com.optictoolcompk.opticaltool.data.models.BillStatistics
+import com.optictoolcompk.opticaltool.ui.billcreation.formatAmount
 import com.optictoolcompk.opticaltool.utils.BillPrintingUtils
 import com.optictoolcompk.opticaltool.utils.BillReceiptGenerator
 import com.optictoolcompk.opticaltool.utils.PdfCenteringUtil
@@ -660,11 +661,7 @@ fun BillStatisticsCard(
                     )
                     Text(
                         "$currency ${
-                            String.format(
-                                Locale.getDefault(),
-                                "%,.0f",
-                                statistics.totalSalesAmount
-                            )
+                                statistics.totalSalesAmount.formatAmount()
                         }",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
@@ -695,11 +692,7 @@ fun BillStatisticsCard(
                     )
                     Text(
                         "$currency ${
-                            String.format(
-                                Locale.getDefault(),
-                                "%,.0f",
-                                statistics.totalUnpaidAmount
-                            )
+                            statistics.totalUnpaidAmount.formatAmount()
                         }",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
@@ -921,13 +914,7 @@ fun BillListItem(
                                 color = MaterialTheme.colorScheme.error
                             )
                             Text(
-                                "$currency ${
-                                    String.format(
-                                        Locale.getDefault(),
-                                        "%.0f",
-                                        bill.remainingAmount
-                                    )
-                                }",
+                                "$currency ${bill.remainingAmount.formatAmount()}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.error

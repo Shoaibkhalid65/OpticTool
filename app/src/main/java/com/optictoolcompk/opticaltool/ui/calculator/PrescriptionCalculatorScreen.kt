@@ -51,7 +51,6 @@ import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -66,7 +65,6 @@ import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -204,12 +202,14 @@ fun EyePrescriptionCalculatorScreen(
                                 finalColor = MaterialTheme.colorScheme.secondary
                             ),
 
-                        ) {
-                            val color= MaterialTheme.colorScheme.surface
+                            ) {
+                            val color = MaterialTheme.colorScheme.surface
                             Icon(
                                 imageVector = if (fabMenuExpanded) Icons.Filled.Close else Icons.Filled.Add,
                                 contentDescription = null,
-                                modifier = Modifier.animateIcon({ checkedProgress }, color = { color }),
+                                modifier = Modifier.animateIcon(
+                                    { checkedProgress },
+                                    color = { color }),
                             )
                         }
                     }
@@ -228,7 +228,8 @@ fun EyePrescriptionCalculatorScreen(
                                 )
                                 val uri = saveBitmapToGallery(context, imageBitmap!!)
                                 if (uri != null) {
-                                    Toast.makeText(context, "Saved to Gallery!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Saved to Gallery!", Toast.LENGTH_SHORT)
+                                        .show()
                                     fabMenuExpanded = false
                                 }
                             }
@@ -772,6 +773,40 @@ fun RowScope.DropdownCell(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var textButtonWidth by remember { mutableIntStateOf(0) }
+    val scrollState = rememberScrollState()
+
+    val targetIndex = remember(selectedValue, values) {
+        when {
+            selectedValue.isNotEmpty() -> {
+                values.indexOf(selectedValue).takeIf { it >= 0 } ?: (values.size / 2)
+            }
+
+            values.contains("0.00") -> {
+                values.indexOf("0.00")
+            }
+
+            else -> {
+                values.size / 2
+            }
+        }
+    }
+
+    val density = LocalDensity.current
+
+    LaunchedEffect(expanded) {
+        if (expanded) {
+
+            val itemHeightPx = with(density) { 48.dp.toPx() }
+            val containerHeightPx = with(density) { 250.dp.toPx() }
+
+            // Scroll so target item is centered
+            val targetScroll =
+                (targetIndex * itemHeightPx) - (containerHeightPx / 2f) + (itemHeightPx / 2f)
+
+            scrollState.scrollTo(targetScroll.toInt().coerceAtLeast(0))
+        }
+    }
+
 
     Box(
         modifier = Modifier
@@ -805,27 +840,43 @@ fun RowScope.DropdownCell(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .height(250.dp)
-                .width(with(LocalDensity.current) { textButtonWidth.toDp() })
+            modifier = Modifier.width(with(LocalDensity.current) { textButtonWidth.toDp() })
         ) {
-            values.forEach { selection ->
-                val formattedSelection =
-                    if ((selection.toDoubleOrNull() ?: 0.0) >= 0) "+$selection" else selection
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = formattedSelection,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Medium
+            Box(
+                modifier = Modifier
+                    .height(250.dp)
+                    .fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                ) {
+                    values.forEach { selection ->
+                        val formattedSelection =
+                            if ((selection.toDoubleOrNull()
+                                    ?: 0.0) >= 0
+                            ) "+$selection" else selection
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = formattedSelection,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = if (selection == selectedValue) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (selection == selectedValue) MaterialTheme.colorScheme.primary else Color(
+                                        0xFF1A1A1A
+                                    )
+                                )
+                            },
+                            onClick = {
+                                onValueChange(selection)
+                                expanded = false
+                            }
                         )
-                    },
-                    onClick = {
-                        onValueChange(selection)
-                        expanded = false
                     }
-                )
+                }
             }
         }
     }

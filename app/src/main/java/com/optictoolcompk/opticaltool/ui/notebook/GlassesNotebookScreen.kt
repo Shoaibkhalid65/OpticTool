@@ -55,7 +55,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +70,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.optictoolcompk.opticaltool.data.models.ClipboardData
 import com.optictoolcompk.opticaltool.data.models.ClipboardRow
 import com.optictoolcompk.opticaltool.data.models.NotebookSection
@@ -83,10 +83,10 @@ fun GlassesNotebookScreen(
     onNavigateBack: () -> Unit = {},
     viewModel: GlassesNotebookViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val sections by viewModel.sections.collectAsState()
-    val selectedSectionId by viewModel.selectedSectionId.collectAsState()
-    val clipboardData by viewModel.clipboardData.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val sections by viewModel.sections.collectAsStateWithLifecycle()
+    val selectedSectionId by viewModel.selectedSectionId.collectAsStateWithLifecycle()
+    val clipboardData by viewModel.clipboardData.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -122,52 +122,6 @@ fun GlassesNotebookScreen(
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            Surface(
-                tonalElevation = 8.dp,
-                shadowElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .navigationBarsPadding(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = { showAddSectionDialog = true },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(Icons.Default.Add, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Add Section", fontWeight = FontWeight.Bold)
-                    }
-
-                    OutlinedButton(
-                        onClick = { showResetDialog = true },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.5.dp,
-                            MaterialTheme.colorScheme.error
-                        ),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(Icons.Default.Delete, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Clear All", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
     ) { paddingValues ->
         if (uiState.isLoading) {
             Box(
@@ -242,6 +196,7 @@ fun GlassesNotebookScreen(
                 if (selectedSectionId == -1L) {
                     items(sections, key = { it.id }) { section ->
                         SectionCard(
+                            snackbarHostState=snackbarHostState,
                             section = section,
                             viewModel = viewModel,
                             isExpanded = true,
@@ -253,11 +208,90 @@ fun GlassesNotebookScreen(
                     if (selectedSection != null) {
                         item(key = selectedSection.id) {
                             SectionCard(
+                                snackbarHostState=snackbarHostState,
                                 section = selectedSection,
                                 viewModel = viewModel,
                                 isExpanded = true,
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
+                        }
+                    }
+                }
+
+
+                item {
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding(),
+                        tonalElevation = 8.dp,
+                        shadowElevation = 4.dp,
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Add Section Button
+                            Button(
+                                onClick = { showAddSectionDialog = true },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = 2.dp,
+                                    pressedElevation = 6.dp
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    text = "Add Section",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
+                            }
+
+                            // Clear All Button
+                            OutlinedButton(
+                                onClick = { showResetDialog = true },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    2.dp,
+                                    MaterialTheme.colorScheme.error
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    text = "Clear All",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
+                            }
                         }
                     }
                 }

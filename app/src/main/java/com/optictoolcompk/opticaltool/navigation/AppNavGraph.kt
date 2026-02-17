@@ -28,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.optictoolcompk.opticaltool.data.auth.AuthState
+import com.optictoolcompk.opticaltool.ui.about.AboutAppScreen
 import com.optictoolcompk.opticaltool.ui.auth.models.AuthEvent
 import com.optictoolcompk.opticaltool.ui.auth.screens.ConfirmEmailScreen
 import com.optictoolcompk.opticaltool.ui.auth.screens.ForgotPasswordScreen
@@ -43,6 +44,7 @@ import com.optictoolcompk.opticaltool.ui.mybills.MyBillsScreen
 import com.optictoolcompk.opticaltool.ui.myprescriptions.PrescriptionListScreen
 import com.optictoolcompk.opticaltool.ui.notebook.GlassesNotebookScreen
 import com.optictoolcompk.opticaltool.ui.prescriptioncreation.PrescriptionFormScreen
+import com.optictoolcompk.opticaltool.ui.privacypolicy.PrivacyPolicyScreen
 import com.optictoolcompk.opticaltool.ui.profile.ProfileScreen
 import com.optictoolcompk.opticaltool.ui.shopdashboard.ShopDashboardScreen
 import com.optictoolcompk.opticaltool.ui.splash.SplashScreen
@@ -300,7 +302,13 @@ fun AppNavGraph(
             ) { padding ->
                 ProfileScreen(
                     authViewModel = authViewModel,
-                    padding = padding
+                    padding = padding,
+                    onNavigateToAbout = {
+                        navController.navigate(Screen.AboutAppScreen.route)
+                    },
+                    onNavigateToPrivacyPolicy = {
+                        navController.navigate(Screen.PrivacyPolicyScreen.route)
+                    }
                 )
             }
         }
@@ -403,6 +411,18 @@ fun AppNavGraph(
                     navController.popBackStack()
                 }
             )
+        }
+
+        composable(Screen.PrivacyPolicyScreen.route) {
+            PrivacyPolicyScreen {
+                navController.popBackStack()
+            }
+        }
+
+        composable(Screen.AboutAppScreen.route){
+            AboutAppScreen {
+                navController.popBackStack()
+            }
         }
 
 

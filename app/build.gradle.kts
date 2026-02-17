@@ -119,6 +119,8 @@ dependencies {
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
     implementation("com.airbnb.android:lottie-compose:6.4.0")
+//  Datastore for persistence of app settings
+    implementation("androidx.datastore:datastore-preferences:1.2.0")
 
 
 }

@@ -24,7 +24,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,6 +42,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -292,7 +299,7 @@ fun PrescriptionFormScreen(
                             onCityChange = { city = it }
                         )
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Prescription Table
                         PrescriptionTable(
@@ -317,7 +324,7 @@ fun PrescriptionFormScreen(
                             isShortWidth = true
                         )
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Footer Section
                         PrescriptionFooter(
@@ -349,148 +356,139 @@ fun PrescriptionHeader(
     city: String,
     onCityChange: (String) -> Unit
 ) {
-    Column {
-        // Prescription No and Date
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+    ) {
+        // Prescription No and Date Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Prescription No.",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = prescriptionNo,
-                    fontSize = 15.sp,
-                    color = Color.Black
-                )
-            }
-
+            Text(
+                text = "Prescription No. $prescriptionNo",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
             Text(
                 text = date,
-                fontSize = 15.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-        // Name and Age
+        // Name Field - Full Width
+        OutlinedTextField(
+            value = name,
+            onValueChange = onNameChange,
+            label = { Text("Name") },
+            placeholder = { Text("Patient name") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Black,
+                unfocusedBorderColor = Color.LightGray,
+                focusedLabelColor = Color.Black,
+                unfocusedLabelColor = Color.Gray
+            )
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        // Phone Field - Full Width
+        OutlinedTextField(
+            value = phone,
+            onValueChange = onPhoneChange,
+            label = { Text("Phone number") },
+            placeholder = { Text("03XX XXXXXXX") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Phone,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Black,
+                unfocusedBorderColor = Color.LightGray,
+                focusedLabelColor = Color.Black,
+                unfocusedLabelColor = Color.Gray
+            )
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        // City and Age Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
+            // City Field
+            OutlinedTextField(
+                value = city,
+                onValueChange = onCityChange,
+                label = { Text("City") },
+                placeholder = { Text("City name") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
                 modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Name :",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.width(70.dp),
-                    color = Color.Black
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color.LightGray,
+                    focusedLabelColor = Color.Black,
+                    unfocusedLabelColor = Color.Gray
                 )
-                BasicTextField(
-                    value = name,
-                    onValueChange = onNameChange,
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 12.dp),
-                    textStyle = TextStyle(fontSize = 15.sp),
-                    singleLine = true
-                )
-            }
+            )
 
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Row(
-                modifier = Modifier.weight(0.6f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Age :",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.width(50.dp),
-                    color = Color.Black
+            // Age Field
+            OutlinedTextField(
+                value = age,
+                onValueChange = onAgeChange,
+                label = { Text("Age") },
+                placeholder = { Text("Age") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                modifier = Modifier.weight(0.7f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color.LightGray,
+                    focusedLabelColor = Color.Black,
+                    unfocusedLabelColor = Color.Gray
                 )
-                BasicTextField(
-                    value = age,
-                    onValueChange = onAgeChange,
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 12.dp),
-                    textStyle = TextStyle(fontSize = 15.sp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Phone and City
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Phone :",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.width(70.dp),
-                    color = Color.Black
-                )
-                BasicTextField(
-                    value = phone,
-                    onValueChange = onPhoneChange,
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 12.dp),
-                    textStyle = TextStyle(fontSize = 15.sp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Row(
-                modifier = Modifier.weight(0.6f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "City :",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.width(50.dp),
-                    color = Color.Black
-                )
-                BasicTextField(
-                    value = city,
-                    onValueChange = onCityChange,
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 12.dp),
-                    textStyle = TextStyle(fontSize = 15.sp),
-                    singleLine = true
-                )
-            }
+            )
         }
     }
 }
@@ -506,10 +504,10 @@ fun PrescriptionFooter(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier) {
             Text("I.P.D", fontWeight = FontWeight.Bold, fontSize = 16.sp,color = Color.Black)
             Spacer(Modifier.width(8.dp))
             Column {
@@ -531,32 +529,31 @@ fun PrescriptionFooter(
             }
         }
 
-        Spacer(modifier = Modifier.width(24.dp))
 
-        // Checked by Section
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        OutlinedTextField(
+            value = checkedBy,
+            onValueChange = onCheckedByChange,
+            label = { Text("Checked by") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.HealthAndSafety,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
             modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.End
-        ) {
-            Text(
-                text = "Checked by :",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Black,
+                unfocusedBorderColor = Color.LightGray,
+                focusedLabelColor = Color.Black,
+                unfocusedLabelColor = Color.Gray
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            BasicTextField(
-                value = checkedBy,
-                onValueChange = onCheckedByChange,
-                modifier = Modifier
-                    .width(150.dp)
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 12.dp),
-                textStyle = TextStyle(fontSize = 15.sp),
-                singleLine = true
-            )
-        }
+        )
+
+
     }
 }
 
@@ -850,6 +847,37 @@ fun RowScope.TableDropdownCell(
     var expanded by remember { mutableStateOf(false) }
     var textButtonWidth by remember { mutableIntStateOf(0) }
 
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+
+    val targetIndex = remember(selectedValue, values) {
+        when {
+            selectedValue.isNotEmpty() -> {
+                values.indexOf(selectedValue).takeIf { it >= 0 } ?: (values.size / 2)
+            }
+            values.contains("0.00") -> {
+                values.indexOf("0.00")   // SPH & CYL
+            }
+            else -> {
+                values.size / 2          // ADD → middle value
+            }
+        }
+    }
+
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            val itemHeightPx = with(density) { 48.dp.toPx() }
+            val containerHeightPx = with(density) { 250.dp.toPx() }
+
+            val targetScroll =
+                (targetIndex * itemHeightPx) -
+                        (containerHeightPx / 2f) +
+                        (itemHeightPx / 2f)
+
+            scrollState.scrollTo(targetScroll.toInt().coerceAtLeast(0))
+        }
+    }
+
     Box(
         modifier = Modifier
             .weight(weight)
@@ -875,6 +903,7 @@ fun RowScope.TableDropdownCell(
                     "0.00"
                 }
             }
+
             Text(
                 text = displayValue,
                 color = if (selectedValue.isEmpty()) Color(0xFF999999) else Color(0xFF1A1A1A),
@@ -887,32 +916,50 @@ fun RowScope.TableDropdownCell(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .height(250.dp)
-                .width(with(LocalDensity.current) { textButtonWidth.toDp() })
+                .width(with(density) { textButtonWidth.toDp() })
         ) {
-            values.forEach { selection ->
-                val formattedSelection = remember(selection) {
-                    if ((selection.toDoubleOrNull() ?: 0.0) >= 0) "+$selection" else selection
-                }
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = formattedSelection,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            fontSize = if (isShortWidth) 12.sp else 14.sp,
-                            fontWeight = FontWeight.Medium
+            Box(
+                modifier = Modifier
+                    .height(250.dp)
+                    .fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                ) {
+                    values.forEach { selection ->
+
+                        val formattedSelection =
+                            if ((selection.toDoubleOrNull() ?: 0.0) >= 0)
+                                "+$selection" else selection
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = formattedSelection,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    fontSize = if (isShortWidth) 12.sp else 14.sp,
+                                    fontWeight = if (selection == selectedValue)
+                                        FontWeight.Bold else FontWeight.Medium,
+                                    color = if (selection == selectedValue)
+                                        MaterialTheme.colorScheme.primary
+                                    else Color(0xFF1A1A1A)
+                                )
+                            },
+                            onClick = {
+                                onValueChange(selection)
+                                expanded = false
+                            }
                         )
-                    },
-                    onClick = {
-                        onValueChange(selection)
-                        expanded = false
                     }
-                )
+                }
             }
         }
     }
 }
+
 
 
 fun Modifier.drawTableCellLines(

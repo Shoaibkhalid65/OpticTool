@@ -19,10 +19,15 @@ import kotlinx.coroutines.withContext
 
 object ClipboardImageGenerator {
 
-    private const val PAGE_WIDTH = 800f
-    private const val MARGIN = 40f
-    private const val ROW_HEIGHT = 40f
-    private const val HEADER_HEIGHT = 60f
+    private const val PAGE_WIDTH = 600f
+    private const val MARGIN = 30f
+    private const val ROW_HEIGHT = 50f
+    private const val HEADER_HEIGHT = 80f
+
+    private const val COL_SR_X = 60f
+    private const val COL_QUALITY_X = 180f
+    private const val COL_NUMBER_X = 390f
+    private const val COL_PAIRS_X = 550f
 
     suspend fun generateAndSaveImage(
         context: Context,
@@ -39,55 +44,66 @@ object ClipboardImageGenerator {
             val paints = GeneratorPaints()
             var y = MARGIN
 
-            // Title
+
             canvas.drawText(
                 "Clipboard Order - Page $pageNumber of $totalPages",
                 PAGE_WIDTH / 2,
-                y + 30f,
+                y + 35f,
                 paints.titlePaint
             )
             y += HEADER_HEIGHT
 
-            // Table Header Background
+
             val headerRect = RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + ROW_HEIGHT)
             canvas.drawRect(headerRect, paints.headerBgPaint)
 
-            // Header Text
-            val colSr = MARGIN + 20f
-            val colQuality = MARGIN + 100f
-            val colNumber = PAGE_WIDTH / 2f + 50f
-            val colPairs = PAGE_WIDTH - MARGIN - 20f
 
-            canvas.drawText("Sr.", colSr, y + 28f, paints.headerTextPaint)
-            canvas.drawText("Quality", colQuality + 50f, y + 28f, paints.headerTextPaint)
-            canvas.drawText("Number", colNumber + 50f, y + 28f, paints.headerTextPaint)
-            canvas.drawText("Pairs", colPairs, y + 28f, paints.headerTextPaintRight)
+            canvas.drawText("Sr.", COL_SR_X, y + 32f, paints.headerTextPaint)
+            canvas.drawText("Quality", COL_QUALITY_X, y + 32f, paints.headerTextPaint)
+            canvas.drawText("Number", COL_NUMBER_X, y + 32f, paints.headerTextPaint)
+            canvas.drawText("Pairs", COL_PAIRS_X, y + 32f, paints.headerTextPaintRight)
 
             y += ROW_HEIGHT
 
-            // Rows
+
             rows.forEachIndexed { index, row ->
                 val rowRect = RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + ROW_HEIGHT)
+
+                // Alternate row background for better readability
                 if (index % 2 == 0) {
                     canvas.drawRect(rowRect, paints.rowAltBgPaint)
                 }
 
-                canvas.drawText(row.globalIndex.toString(), colSr, y + 28f, paints.rowTextPaint)
+
+                canvas.drawText(
+                    row.globalIndex.toString(),
+                    COL_SR_X,
+                    y + 33f,
+                    paints.rowTextPaintBold
+                )
+
                 canvas.drawText(
                     row.sectionName,
-                    colQuality + 50f,
-                    y + 28f,
-                    paints.rowTextPaintCenter
+                    COL_QUALITY_X,
+                    y + 33f,
+                    paints.rowTextPaintBold
                 )
+
                 canvas.drawText(
                     row.getFormattedNumber(),
-                    colNumber + 50f,
-                    y + 28f,
-                    paints.rowTextPaintCenter
+                    COL_NUMBER_X,
+                    y + 33f,
+                    paints.rowTextPaintBold
                 )
-                canvas.drawText(row.pairs.toString(), colPairs, y + 28f, paints.rowTextPaintRight)
 
-                // Row Divider
+                canvas.drawText(
+                    row.pairs.toString(),
+                    COL_PAIRS_X,
+                    y + 33f,
+                    paints.rowTextPaintBoldRight
+                )
+
+
                 canvas.drawLine(
                     MARGIN,
                     y + ROW_HEIGHT,
@@ -140,54 +156,65 @@ object ClipboardImageGenerator {
     }
 
     private class GeneratorPaints {
+
         val titlePaint = Paint().apply {
             color = Color.BLACK
-            textSize = 32f
+            textSize = 34f  // Slightly larger
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
+
+
         val headerBgPaint = Paint().apply {
-            color = Color.BLACK
+            color = "#2C3E50".toColorInt()  // Professional dark blue-gray
             style = Paint.Style.FILL
         }
+
+
         val headerTextPaint = Paint().apply {
             color = Color.WHITE
-            textSize = 18f
+            textSize = 20f  // Increased from 18f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
-        }
-        val headerTextPaintRight = Paint().apply {
-            color = Color.WHITE
-            textSize = 18f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textAlign = Paint.Align.RIGHT
-            isAntiAlias = true
-        }
-        val rowTextPaint = Paint().apply {
-            color = Color.BLACK
-            textSize = 18f
-            isAntiAlias = true
-        }
-        val rowTextPaintCenter = Paint().apply {
-            color = Color.BLACK
-            textSize = 18f
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
-        val rowTextPaintRight = Paint().apply {
-            color = Color.BLACK
-            textSize = 18f
+
+        val headerTextPaintRight = Paint().apply {
+            color = Color.WHITE
+            textSize = 20f  // Increased from 18f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.RIGHT
             isAntiAlias = true
         }
+
+
+        val rowTextPaintBold = Paint().apply {
+            color = "#1A1A1A".toColorInt()  // Slightly softer black
+            textSize = 20f  // Increased from 18f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+
+        val rowTextPaintBoldRight = Paint().apply {
+            color = "#1A1A1A".toColorInt()
+            textSize = 20f  // Increased from 18f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.RIGHT
+            isAntiAlias = true
+        }
+
+
         val rowAltBgPaint = Paint().apply {
-            color = "#F2F2F2".toColorInt()
+            color = "#F8F9FA".toColorInt()  // Very light gray
             style = Paint.Style.FILL
         }
+
+
         val dividerPaint = Paint().apply {
-            color = Color.LTGRAY
-            strokeWidth = 1f
+            color = "#E0E0E0".toColorInt()  // Light gray
+            strokeWidth = 1.5f  // Slightly thicker
         }
     }
 }

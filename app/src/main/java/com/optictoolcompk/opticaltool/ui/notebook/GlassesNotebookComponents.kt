@@ -8,15 +8,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -44,19 +47,24 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -66,11 +74,13 @@ import androidx.compose.ui.unit.sp
 import com.optictoolcompk.opticaltool.data.models.NotebookMode
 import com.optictoolcompk.opticaltool.data.models.NotebookRow
 import com.optictoolcompk.opticaltool.data.models.NotebookSection
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SectionCard(
+    snackbarHostState: SnackbarHostState,
     section: NotebookSection,
     viewModel: GlassesNotebookViewModel,
     isExpanded: Boolean,
@@ -79,6 +89,7 @@ fun SectionCard(
     var showDeleteMenu by remember { mutableStateOf(false) }
     var showMarkMenu by remember { mutableStateOf(false) }
     var showDeleteSectionDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -345,7 +356,7 @@ fun SectionCard(
                     }
                 }
 
-                // Move Arrows (compact)
+                // Move Arrows
                 CompositionLocalProvider(
                     LocalMinimumInteractiveComponentSize provides Dp.Unspecified
                 ) {
@@ -354,7 +365,9 @@ fun SectionCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
-                            onClick = { viewModel.moveSectionUp(section.id) },
+                            onClick = {
+                                viewModel.moveSectionUp(section.id)
+                            },
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
@@ -369,7 +382,9 @@ fun SectionCard(
                         }
 
                         IconButton(
-                            onClick = { viewModel.moveSectionDown(section.id) },
+                            onClick = {
+                                viewModel.moveSectionDown(section.id)
+                            },
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
@@ -384,7 +399,6 @@ fun SectionCard(
                         }
                     }
                 }
-
 
                 // Mark/Unmark Dropdown
                 Box {
@@ -414,20 +428,56 @@ fun SectionCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Bold
                         )
+
+                        // Mark All Copy
                         DropdownMenuItem(
                             text = { Text("Mark All Copy", color = Color(0xFF2196F3)) },
                             onClick = {
-                                viewModel.markAllCopyInSection(section.id, true)
                                 showMarkMenu = false
+                                if (section.rows.isEmpty()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "No rows to mark in this section",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                } else {
+                                    viewModel.markAllCopyInSection(section.id, true)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "All rows marked for copy and added to clipboard",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                }
                             }
                         )
+
+                        // Mark All Order
                         DropdownMenuItem(
                             text = { Text("Mark All Order", color = Color(0xFF4CAF50)) },
                             onClick = {
-                                viewModel.markAllOrderedInSection(section.id, true)
                                 showMarkMenu = false
+                                if (section.rows.isEmpty()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "No rows to mark in this section",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                } else {
+                                    viewModel.markAllOrderedInSection(section.id, true)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "All rows marked as ordered",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                }
                             }
                         )
+
+                        // Mark All Delete
                         DropdownMenuItem(
                             text = {
                                 Text(
@@ -436,11 +486,28 @@ fun SectionCard(
                                 )
                             },
                             onClick = {
-                                viewModel.markAllDeleteInSection(section.id, true)
                                 showMarkMenu = false
+                                if (section.rows.isEmpty()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "No rows to mark in this section",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                } else {
+                                    viewModel.markAllDeleteInSection(section.id, true)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "All rows marked for deletion",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                }
                             }
                         )
+
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
                         Text(
                             "Unmark All",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -448,20 +515,76 @@ fun SectionCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Bold
                         )
+
+                        // Unmark All Copy
                         DropdownMenuItem(
                             text = { Text("Unmark All Copy", color = Color(0xFF2196F3)) },
                             onClick = {
-                                viewModel.markAllCopyInSection(section.id, false)
                                 showMarkMenu = false
+                                if (section.rows.isEmpty()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "No rows to unmark in this section",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                } else {
+                                    val hasMarkedRows = section.rows.any { it.isCopy }
+                                    if (!hasMarkedRows) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "No copy marks to remove",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    } else {
+                                        viewModel.markAllCopyInSection(section.id, false)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "All copy marks removed",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         )
+
+                        // Unmark All Order
                         DropdownMenuItem(
                             text = { Text("Unmark All Order", color = Color(0xFF4CAF50)) },
                             onClick = {
-                                viewModel.markAllOrderedInSection(section.id, false)
                                 showMarkMenu = false
+                                if (section.rows.isEmpty()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "No rows to unmark in this section",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                } else {
+                                    val hasMarkedRows = section.rows.any { it.isOrdered }
+                                    if (!hasMarkedRows) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "No order marks to remove",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    } else {
+                                        viewModel.markAllOrderedInSection(section.id, false)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "All order marks removed",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         )
+
+                        // Unmark All Delete
                         DropdownMenuItem(
                             text = {
                                 Text(
@@ -470,8 +593,33 @@ fun SectionCard(
                                 )
                             },
                             onClick = {
-                                viewModel.markAllDeleteInSection(section.id, false)
                                 showMarkMenu = false
+                                if (section.rows.isEmpty()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "No rows to unmark in this section",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                } else {
+                                    val hasMarkedRows = section.rows.any { it.isDelete }
+                                    if (!hasMarkedRows) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "No delete marks to remove",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    } else {
+                                        viewModel.markAllDeleteInSection(section.id, false)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "All delete marks removed",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         )
                     }
@@ -531,6 +679,8 @@ fun SectionCard(
     }
 }
 
+// Rest of the file remains the same (AddRowForm, NotebookRowItem, CustomCheckbox, AddSectionDialog, helper functions)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddRowForm(
@@ -558,8 +708,41 @@ fun AddRowForm(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.Top
             ) {
+
+                val density = LocalDensity.current
+
                 // SPH Dropdown
                 var sphExpanded by remember { mutableStateOf(false) }
+                val sphScrollState = rememberScrollState()
+
+                val sphTargetIndex = remember(sphValue, sphOptions) {
+                    when {
+                        sphValue.isNotEmpty() -> {
+                            sphOptions.indexOf(sphValue).takeIf { it >= 0 } ?: (sphOptions.size / 2)
+                        }
+                        sphOptions.contains("0.00") -> {
+                            sphOptions.indexOf("0.00")
+                        }
+                        else -> {
+                            sphOptions.size / 2
+                        }
+                    }
+                }
+
+                LaunchedEffect(sphExpanded) {
+                    if (sphExpanded) {
+                        val itemHeightPx = with(density) { 48.dp.toPx() }
+                        val containerHeightPx = with(density) { 250.dp.toPx() }
+
+                        val targetScroll =
+                            (sphTargetIndex * itemHeightPx) -
+                                    (containerHeightPx / 2f) +
+                                    (itemHeightPx / 2f)
+
+                        sphScrollState.scrollTo(targetScroll.toInt().coerceAtLeast(0))
+                    }
+                }
+
                 ExposedDropdownMenuBox(
                     expanded = sphExpanded,
                     onExpandedChange = { sphExpanded = !sphExpanded },
@@ -586,30 +769,73 @@ fun AddRowForm(
 
                     ExposedDropdownMenu(
                         expanded = sphExpanded,
-                        onDismissRequest = { sphExpanded = false },
-                        modifier = Modifier.height(250.dp)
+                        onDismissRequest = { sphExpanded = false }
                     ) {
-                        sphOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = option,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textAlign = TextAlign.Center
+                        Box(
+                            modifier = Modifier
+                                .height(250.dp)
+                                .fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(sphScrollState)
+                            ) {
+                                sphOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = option,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                textAlign = TextAlign.Center,
+                                                fontWeight = if (option == sphValue) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (option == sphValue) MaterialTheme.colorScheme.primary else Color(0xFF1A1A1A)
+                                            )
+                                        },
+                                        onClick = {
+                                            sphValue = option
+                                            sphExpanded = false
+                                            showValidationError = false
+                                        }
                                     )
-                                },
-                                onClick = {
-                                    sphValue = option
-                                    sphExpanded = false
-                                    showValidationError = false
                                 }
-                            )
+                            }
                         }
                     }
                 }
 
                 // CYL Dropdown
                 var cylExpanded by remember { mutableStateOf(false) }
+                val cylScrollState = rememberScrollState()
+
+                val cylTargetIndex = remember(cylValue, cylOptions) {
+                    when {
+                        cylValue.isNotEmpty() -> {
+                            cylOptions.indexOf(cylValue).takeIf { it >= 0 } ?: (cylOptions.size / 2)
+                        }
+                        cylOptions.contains("0.00") -> {
+                            cylOptions.indexOf("0.00")
+                        }
+                        else -> {
+                            cylOptions.size / 2
+                        }
+                    }
+                }
+
+                LaunchedEffect(cylExpanded) {
+                    if (cylExpanded) {
+                        val itemHeightPx = with(density) { 48.dp.toPx() }
+                        val containerHeightPx = with(density) { 250.dp.toPx() }
+
+                        val targetScroll =
+                            (cylTargetIndex * itemHeightPx) -
+                                    (containerHeightPx / 2f) +
+                                    (itemHeightPx / 2f)
+
+                        cylScrollState.scrollTo(targetScroll.toInt().coerceAtLeast(0))
+                    }
+                }
+
                 ExposedDropdownMenuBox(
                     expanded = cylExpanded,
                     onExpandedChange = { cylExpanded = !cylExpanded },
@@ -636,24 +862,37 @@ fun AddRowForm(
 
                     ExposedDropdownMenu(
                         expanded = cylExpanded,
-                        onDismissRequest = { cylExpanded = false },
-                        modifier = Modifier.height(250.dp)
+                        onDismissRequest = { cylExpanded = false }
                     ) {
-                        cylOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = option,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textAlign = TextAlign.Center
+                        Box(
+                            modifier = Modifier
+                                .height(250.dp)
+                                .fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(cylScrollState)
+                            ) {
+                                cylOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = option,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                textAlign = TextAlign.Center,
+                                                fontWeight = if (option == cylValue) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (option == cylValue) MaterialTheme.colorScheme.primary else Color(0xFF1A1A1A)
+                                            )
+                                        },
+                                        onClick = {
+                                            cylValue = option
+                                            cylExpanded = false
+                                            showValidationError = false
+                                        }
                                     )
-                                },
-                                onClick = {
-                                    cylValue = option
-                                    cylExpanded = false
-                                    showValidationError = false
                                 }
-                            )
+                            }
                         }
                     }
                 }
@@ -942,13 +1181,13 @@ private fun generateSphOptions(mode: NotebookMode): List<String> {
     when (mode) {
         NotebookMode.KT -> {
             for (i in 12 downTo 1) {
-                val value = (i * 0.25).toString()
-                options.add("-$value")
+                val value = String.format(Locale.getDefault(), "%.2f", i * 0.25)
+                options.add("+$value")
             }
             options.add("0.00")
             for (i in 1..12) {
-                val value = (i * 0.25).toString()
-                options.add("+$value")
+                val value = String.format(Locale.getDefault(), "%.2f", i * 0.25)
+                options.add("-$value")
             }
         }
 

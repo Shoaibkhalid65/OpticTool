@@ -255,20 +255,20 @@ object PrescriptionCalculator {
 // Updated value generation functions with consistent formatting
 fun generateSphValues(): List<String> {
     val values = mutableListOf<String>()
-    var i = -24.0
-    while (i <= 24.0) {
+    var i = 24.0
+    while (i >= -24.0) {
         values.add(String.format(Locale.getDefault(),"%.2f", i))
-        i += 0.25
+        i -= 0.25
     }
     return values
 }
 
 fun generateCylValues(): List<String> {
     val values = mutableListOf<String>()
-    var i = -6.0
-    while (i <= 6.0) {
+    var i = 6.0
+    while (i >= -6.0) {
         values.add(String.format(Locale.getDefault(),"%.2f", i))
-        i += 0.25
+        i -= 0.25
     }
     return values
 }

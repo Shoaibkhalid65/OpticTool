@@ -76,7 +76,7 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Optical Tool",
+                        "Optic Tool",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -201,7 +201,7 @@ fun WelcomeSection() {
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    "Welcome to Optical Tool",
+                    "Welcome to Optic Tool",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -217,71 +217,6 @@ fun WelcomeSection() {
     }
 }
 
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun ToolCard(
-//    tool: ToolItem,
-//    onClick: () -> Unit
-//) {
-//    Card(
-//        onClick = onClick,
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .aspectRatio(1f),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-//        colors = CardDefaults.cardColors(
-//            containerColor = MaterialTheme.colorScheme.surface
-//        ),
-//        shape = RoundedCornerShape(24.dp)
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(20.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Center
-//        ) {
-//            // Icon with colored background
-//            Box(
-//                modifier = Modifier
-//                    .size(72.dp)
-//                    .clip(CircleShape)
-//                    .background(tool.backgroundColor),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Icon(
-//                    tool.icon,
-//                    contentDescription = null,
-//                    modifier = Modifier.size(36.dp),
-//                    tint = tool.iconColor
-//                )
-//            }
-//
-//            Spacer(Modifier.height(12.dp))
-//
-//            // Title
-//            Text(
-//                tool.title,
-//                style = MaterialTheme.typography.titleMedium,
-//                fontWeight = FontWeight.Bold,
-//                color = MaterialTheme.colorScheme.onSurface,
-//                maxLines = 1,
-//                overflow = TextOverflow.Ellipsis
-//            )
-//
-//            Spacer(Modifier.height(4.dp))
-//
-//            // Subtitle
-//            Text(
-//                tool.subtitle,
-//                style = MaterialTheme.typography.bodySmall,
-//                color = MaterialTheme.colorScheme.onSurfaceVariant,
-//                maxLines = 1,
-//                overflow = TextOverflow.Ellipsis
-//            )
-//        }
-//    }
-//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,9 +1,9 @@
 package com.optictoolcompk.opticaltool.ui.profile
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.History
@@ -40,7 +41,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,64 +63,6 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.time.Instant
 
-
-//@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-//@Composable
-//fun ProfileScreen(authViewModel: AuthViewModel = hiltViewModel()) {
-//
-//    val scope = rememberCoroutineScope()
-//    var userInfo by remember { mutableStateOf<UserInfo?>(null) }
-//
-//    val uiState by authViewModel.uiState.collectAsState()
-//
-//    LaunchedEffect(Unit) {
-//        scope.launch {
-//            userInfo = authViewModel.getCurrentUser()
-//        }
-//    }
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(MaterialTheme.colorScheme.background)
-//            .padding(24.dp),
-//        verticalArrangement = Arrangement.spacedBy(24.dp, alignment = Alignment.CenterVertically),
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//        Text(
-//            text = "Home Screen",
-//            fontWeight = FontWeight.SemiBold,
-//            style = MaterialTheme.typography.titleMedium
-//        )
-//
-//        AdaptiveImage(
-//            imageUrl = userInfo?.userMetadata?.get("avatar_url")?.jsonPrimitive?.content,
-//            fallbackIcon = Icons.Default.Person,
-//            contentDescription = "profile image",
-//            modifier = Modifier
-//                .size(64.dp)
-//                .clip(CircleShape)
-//        )
-//
-//        Text(
-//            text = userInfo?.userMetadata?.get("full_name")?.jsonPrimitive?.content ?: "name"
-//        )
-//
-//        Text(
-//            text = userInfo?.email ?: "email"
-//        )
-//
-//        AuthLoadingButton(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(56.dp),
-//            text = "Sign Out",
-//            action = AuthAction.SIGN_OUT,
-//            uiState = uiState,
-//            onClick = { authViewModel.signOut() }
-//        )
-//    }
-//}
-//
 @Composable
 fun AdaptiveImage(
     imageUrl: String?,
@@ -148,13 +90,13 @@ fun AdaptiveImage(
 @Composable
 fun ProfileScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
-    padding: PaddingValues
+    padding: PaddingValues,
+    onNavigateToAbout: () -> Unit = {},
+    onNavigateToPrivacyPolicy: () -> Unit = {}
 ) {
-    val scope = rememberCoroutineScope()
     var userInfo by remember { mutableStateOf<UserInfo?>(null) }
     val uiState by authViewModel.uiState.collectAsState()
 
-    // Extracting Metadata safely
     val fullName = userInfo?.userMetadata?.get("full_name")?.jsonPrimitive?.content ?: "Optical Pro"
     val avatarUrl = userInfo?.userMetadata?.get("avatar_url")?.jsonPrimitive?.content
     val email = userInfo?.email ?: "Not Available"
@@ -166,8 +108,6 @@ fun ProfileScreen(
     val lastActive = remember(userInfo?.lastSignInAt) {
         formatKotlinInstant(userInfo?.lastSignInAt)
     }
-
-
 
     LaunchedEffect(Unit) {
         userInfo = authViewModel.getCurrentUser()
@@ -190,7 +130,7 @@ fun ProfileScreen(
     ) {
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- Profile Header Section ---
+        // Profile Header
         Box(
             modifier = Modifier
                 .size(120.dp)
@@ -230,7 +170,7 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- Info Cards Section ---
+        // Account Information
         Column(
             modifier = Modifier.padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -248,17 +188,45 @@ fun ProfileScreen(
                 )
             )
 
-            ProfileInfoCard(
-                title = "Support & Settings",
-                items = listOf(
-                    ProfileItem(Icons.Default.Info, "About Optic Tool", "v1.0.2"),
-                    ProfileItem(Icons.Default.Lock, "Privacy Policy", "")
-                )
-            )
+            // Support & Settings with Navigation
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Support & Settings",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // About App - Clickable
+                    ClickableProfileRow(
+                        icon = Icons.Default.Info,
+                        label = "About Optic Tool",
+                        value = "v1.0.3",
+                        onClick = onNavigateToAbout
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    // Privacy Policy - Clickable
+                    ClickableProfileRow(
+                        icon = Icons.Default.Lock,
+                        label = "Privacy Policy",
+                        value = "",
+                        onClick = onNavigateToPrivacyPolicy
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Logout Button ---
+            // Sign Out Button
             AuthLoadingButton(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -333,18 +301,57 @@ fun ProfileInfoCard(title: String, items: List<ProfileItem>) {
     }
 }
 
+@Composable
+fun ClickableProfileRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        if (value.isNotEmpty()) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
+
 data class ProfileItem(val icon: ImageVector, val label: String, val value: String)
 
 fun formatKotlinInstant(instant: Instant?): String {
     if (instant == null) return "N/A"
-
-    // Convert Instant to a local date-time based on the user's system timezone
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-
-    // Format manually or using a simple string template for a clean look
     val month = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }
     val day = localDateTime.dayOfMonth
     val year = localDateTime.year
-
     return "$month $day, $year"
 }

@@ -60,4 +60,9 @@ sealed class Screen(val route: String) {
     object ShopDashboardScreen : Screen("shop_dashboard_screen")
 
     object GlassesNotebookScreen : Screen("glasses_notebook_screen")
+
+//    about profile screens
+    object PrivacyPolicyScreen : Screen("privacy_policy_screen")
+
+    object AboutAppScreen : Screen("about_app_screen")
 }

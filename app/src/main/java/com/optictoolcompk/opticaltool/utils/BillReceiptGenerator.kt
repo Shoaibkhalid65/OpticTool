@@ -17,6 +17,7 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import com.optictoolcompk.opticaltool.data.models.Bill
 import com.optictoolcompk.opticaltool.data.models.ShopSettings
+import com.optictoolcompk.opticaltool.ui.billcreation.formatAmount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -179,13 +180,13 @@ object BillReceiptGenerator {
             canvas.drawText(item.itemName, cols[0] + 10f, curY, p.normal12)
             canvas.drawText(item.quantity.toString(), cols[1], curY, p.normal12Center)
             canvas.drawText(
-                "${shop.currency} ${String.format(Locale.getDefault(), "%.0f", item.price)}",
+                "${shop.currency} ${item.price.formatAmount()}",
                 cols[2],
                 curY,
                 p.normal12Center
             )
             canvas.drawText(
-                "${shop.currency} ${String.format(Locale.getDefault(), "%.0f", item.total)}",
+                "${shop.currency} ${item.total.formatAmount()}",
                 cols[3],
                 curY,
                 p.normal12Right
@@ -318,7 +319,7 @@ object BillReceiptGenerator {
             canvas.drawText("$label $currency", labelX, curY, p.normal12Right)
             val prefix = if (isMinus) "- " else ""
             canvas.drawText(
-                "$prefix${String.format(Locale.getDefault(), "%.0f", value)}",
+                "$prefix${value.formatAmount()}",
                 rightX,
                 curY,
                 p.bold12Right
@@ -349,7 +350,7 @@ object BillReceiptGenerator {
         canvas.drawText("Remaining $currency", labelX, curY, p.bold14Right)
         val remainingColor = if (bill.remainingAmount > 0) Color.RED else "#4CAF50".toColorInt()
         canvas.drawText(
-            String.format(Locale.getDefault(), "%.0f", bill.remainingAmount),
+            bill.remainingAmount.formatAmount(),
             rightX,
             curY,
             p.bold14Right.apply { this.color = remainingColor }
