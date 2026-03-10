@@ -155,9 +155,13 @@ Custom PDF templates with shop branding using native Android APIs, including dir
 
 ---
 
+## 📄 Legal
+[Privacy Policy](./PRIVACY_POLICY.md) • [License](./LICENSE)
+
 
 ## 📫 Contact
 
 **Muhammad Shoaib Khalid**
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat&logo=linkedin)](https://linkedin.com/in/muhammad-shoaib-khalid-864502297)
 [![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=flat&logo=github)](https://github.com/shoaibkhalid65)
+
