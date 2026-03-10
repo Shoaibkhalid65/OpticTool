@@ -2,7 +2,7 @@
 
 **Last updated:** March 2026  
 **Developer:** Muhammad Shoaib Khalid  
-**Contact:** shoaibkhalid65@gmail.com
+**Contact:** gshoaib998@gmail.com
 
 ---
 
