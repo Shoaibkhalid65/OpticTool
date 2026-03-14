@@ -49,7 +49,7 @@ Built entirely in **Kotlin + Jetpack Compose**, delivered as a freelance client 
 - Sales analytics dashboard (total sales, outstanding amounts)
 - PDF export, native printing, and WhatsApp sharing
 - Advanced search & filter by date, status, and customer
-- Pickup date scheduling
+- Pickup date scheduling.
 
 ### 📋 Prescription Management
 - Digital storage with image attachments
