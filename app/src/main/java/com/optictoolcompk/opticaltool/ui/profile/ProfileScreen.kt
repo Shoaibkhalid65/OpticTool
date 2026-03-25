@@ -1,6 +1,6 @@
 package com.optictoolcompk.opticaltool.ui.profile
 
-import androidx.compose.foundation.Image
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,14 +45,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.optictoolcompk.opticaltool.R
 import com.optictoolcompk.opticaltool.ui.auth.components.AuthLoadingButton
 import com.optictoolcompk.opticaltool.ui.auth.models.AuthAction
 import com.optictoolcompk.opticaltool.ui.auth.viewmodel.AuthViewModel
@@ -63,28 +67,6 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.time.Instant
 
-@Composable
-fun AdaptiveImage(
-    imageUrl: String?,
-    fallbackIcon: ImageVector,
-    contentDescription: String?,
-    modifier: Modifier = Modifier
-) {
-    if (imageUrl != null) {
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = contentDescription,
-            modifier = modifier
-        )
-    } else {
-        Image(
-            imageVector = fallbackIcon,
-            contentDescription = contentDescription,
-            modifier = modifier,
-            colorFilter = ColorFilter.tint(Color.Gray)
-        )
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,7 +77,7 @@ fun ProfileScreen(
     onNavigateToPrivacyPolicy: () -> Unit = {}
 ) {
     var userInfo by remember { mutableStateOf<UserInfo?>(null) }
-    val uiState by authViewModel.uiState.collectAsState()
+    val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
 
     val fullName = userInfo?.userMetadata?.get("full_name")?.jsonPrimitive?.content ?: "Optical Pro"
     val avatarUrl = userInfo?.userMetadata?.get("avatar_url")?.jsonPrimitive?.content
@@ -145,7 +127,7 @@ fun ProfileScreen(
         ) {
             AdaptiveImage(
                 imageUrl = avatarUrl,
-                fallbackIcon = Icons.Default.Person,
+                fallbackIconId = R.drawable.baseline_account_circle_24_sec_col,
                 contentDescription = "Profile Picture",
                 modifier = Modifier
                     .fillMaxSize()
@@ -247,6 +229,27 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
+}
+
+@Composable
+fun AdaptiveImage(
+    imageUrl: String?,
+    @DrawableRes
+    fallbackIconId: Int,
+    contentDescription: String?,
+    modifier: Modifier = Modifier
+) {
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(imageUrl)
+            .crossfade(true)
+            .build(),
+        contentDescription = contentDescription,
+        placeholder = painterResource(fallbackIconId),
+        error = painterResource(fallbackIconId),
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+    )
 }
 
 @Composable

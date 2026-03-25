@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.optictoolcompk.opticaltool.ui.auth.components.AuthLoadingButton
 import com.optictoolcompk.opticaltool.ui.auth.components.OtpInputField
 import com.optictoolcompk.opticaltool.ui.auth.models.AuthAction
@@ -50,7 +51,7 @@ fun ForgotPasswordScreen(
     var email by remember { mutableStateOf("") }
     var emailTouched by remember { mutableStateOf(false) }
 
-    val uiState by authViewModel.uiState.collectAsState()
+    val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
 
     // Email validation
     val isEmailValid =

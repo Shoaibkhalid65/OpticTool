@@ -105,7 +105,7 @@ fun PrescriptionFormScreen(
     viewModel: PrescriptionViewModel = hiltViewModel(),
     navController: NavHostController? = null
 ) {
-    val prescriptionNumber by viewModel.prescriptionNumber.collectAsState()
+    val prescriptionNumber by viewModel.prescriptionNumber.collectAsStateWithLifecycle()
     val saveState by viewModel.saveState.collectAsStateWithLifecycle()
     val isEditMode by viewModel.isEditMode.collectAsStateWithLifecycle()
     val formData by viewModel.formData.collectAsStateWithLifecycle()

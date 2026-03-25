@@ -39,7 +39,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,11 +51,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -60,6 +72,10 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.airbnb.lottie.compose.rememberLottieDynamicProperties
 import com.airbnb.lottie.compose.rememberLottieDynamicProperty
+import com.optictoolcompk.opticaltool.R
+import com.optictoolcompk.opticaltool.ui.auth.viewmodel.AuthViewModel
+import io.github.jan.supabase.auth.user.UserInfo
+import kotlinx.serialization.json.jsonPrimitive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,8 +85,16 @@ fun HomeScreen(
     onNavigateToBillBook: () -> Unit,
     onNavigateToNotebook: () -> Unit,
     onNavigateToShopSetting: () -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
+    var userInfo by remember { mutableStateOf<UserInfo?>(null) }
+    val avatarUrl = userInfo?.userMetadata?.get("avatar_url")?.jsonPrimitive?.content
+
+    LaunchedEffect(Unit) {
+        userInfo = authViewModel.getCurrentUser()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -86,12 +110,21 @@ fun HomeScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
+
                 actions = {
                     IconButton(onClick = onNavigateToProfile) {
-                        Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = "Profile",
-                            modifier = Modifier.size(28.dp)
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(avatarUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Profile photo",
+                            placeholder = painterResource(R.drawable.baseline_account_circle_24),
+                            error = painterResource(R.drawable.baseline_account_circle_24),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
                         )
                     }
                 }

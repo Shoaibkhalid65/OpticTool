@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.optictoolcompk.opticaltool.ui.auth.components.AuthLoadingButton
 import com.optictoolcompk.opticaltool.ui.auth.components.OtpInputField
 import com.optictoolcompk.opticaltool.ui.auth.models.AuthAction
@@ -63,7 +64,7 @@ fun SignUpScreen(
 
     var showError by remember { mutableStateOf(false) }
 
-    val uiState by authViewModel.uiState.collectAsState()
+    val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
 
     var emailTouched by remember { mutableStateOf(false) }
 

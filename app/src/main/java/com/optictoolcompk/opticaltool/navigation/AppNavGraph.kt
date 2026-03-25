@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -54,7 +55,7 @@ import com.optictoolcompk.opticaltool.ui.splash.SplashScreen
 fun AppNavGraph(
     authViewModel: AuthViewModel = hiltViewModel(),
 ) {
-    val authState by authViewModel.authState.collectAsState()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val navController: NavHostController = rememberNavController()
 
     val snackbarHostState = remember { SnackbarHostState() }

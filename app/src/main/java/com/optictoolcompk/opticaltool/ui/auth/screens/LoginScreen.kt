@@ -47,6 +47,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.optictoolcompk.opticaltool.R
 import com.optictoolcompk.opticaltool.ui.auth.components.AuthLoadingButton
 import com.optictoolcompk.opticaltool.ui.auth.components.AuthLoadingOutlinedButton
@@ -66,7 +67,7 @@ fun SignInScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var emailTouched by remember { mutableStateOf(false) }
 
-    val uiState by authViewModel.uiState.collectAsState()
+    val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
 
     // Email validation
     val isEmailValid =

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.optictoolcompk.opticaltool.ui.auth.components.AuthLoadingButton
 import com.optictoolcompk.opticaltool.ui.auth.components.OtpInputField
 import com.optictoolcompk.opticaltool.ui.auth.models.AuthAction
@@ -41,7 +42,7 @@ fun ConfirmEmailScreen(
 ) {
     var otpValue by remember { mutableStateOf("") }
     var timeLeft by remember { mutableIntStateOf(0) }
-    val uiState by authViewModel.uiState.collectAsState()
+    val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     Column(

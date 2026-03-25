@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -196,7 +195,7 @@ fun GlassesNotebookScreen(
                 if (selectedSectionId == -1L) {
                     items(sections, key = { it.id }) { section ->
                         SectionCard(
-                            snackbarHostState=snackbarHostState,
+                            snackbarHostState = snackbarHostState,
                             section = section,
                             viewModel = viewModel,
                             isExpanded = true,
@@ -208,7 +207,7 @@ fun GlassesNotebookScreen(
                     if (selectedSection != null) {
                         item(key = selectedSection.id) {
                             SectionCard(
-                                snackbarHostState=snackbarHostState,
+                                snackbarHostState = snackbarHostState,
                                 section = selectedSection,
                                 viewModel = viewModel,
                                 isExpanded = true,
@@ -224,8 +223,7 @@ fun GlassesNotebookScreen(
 
                     Surface(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding(),
+                            .fillMaxWidth(),
                         tonalElevation = 8.dp,
                         shadowElevation = 4.dp,
                         color = MaterialTheme.colorScheme.surface,
@@ -237,43 +235,29 @@ fun GlassesNotebookScreen(
                                 .padding(16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Add Section Button
                             Button(
                                 onClick = { showAddSectionDialog = true },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary
-                                ),
-                                elevation = ButtonDefaults.buttonElevation(
-                                    defaultElevation = 2.dp,
-                                    pressedElevation = 6.dp
                                 )
                             ) {
                                 Icon(
                                     Icons.Default.Add,
                                     contentDescription = null,
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    text = "Add Section",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Add Section", fontWeight = FontWeight.Bold)
                             }
 
-                            // Clear All Button
                             OutlinedButton(
                                 onClick = { showResetDialog = true },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
                                 border = androidx.compose.foundation.BorderStroke(
-                                    2.dp,
+                                    1.5.dp,
                                     MaterialTheme.colorScheme.error
                                 ),
                                 colors = ButtonDefaults.outlinedButtonColors(
@@ -283,16 +267,13 @@ fun GlassesNotebookScreen(
                                 Icon(
                                     Icons.Default.Delete,
                                     contentDescription = null,
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    text = "Clear All",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Clear All", fontWeight = FontWeight.Bold)
                             }
                         }
+
                     }
                 }
             }

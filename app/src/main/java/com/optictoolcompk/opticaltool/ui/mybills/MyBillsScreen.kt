@@ -85,6 +85,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.optictoolcompk.opticaltool.data.models.Bill
 import com.optictoolcompk.opticaltool.data.models.BillSortOption
@@ -109,9 +110,9 @@ fun MyBillsScreen(
     onNavigateBack: () -> Unit,
     viewModel: MyBillsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val filterState by viewModel.filterState.collectAsState()
-    val shopSettings by viewModel.shopSettings.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filterState by viewModel.filterState.collectAsStateWithLifecycle()
+    val shopSettings by viewModel.shopSettings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 

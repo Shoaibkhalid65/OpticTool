@@ -102,6 +102,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.optictoolcompk.opticaltool.data.models.PrescriptionEntity
 import com.optictoolcompk.opticaltool.data.models.PrescriptionSortOption
 import com.optictoolcompk.opticaltool.ui.prescriptioncreation.PrescriptionViewModel
@@ -124,9 +125,9 @@ fun PrescriptionListScreen(
     onCalculateTranspose: (PrescriptionEntity) -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    val prescriptions by listViewModel.prescriptions.collectAsState()
-    val filterState by listViewModel.filterState.collectAsState()
-    val deleteState by listViewModel.deleteState.collectAsState()
+    val prescriptions by listViewModel.prescriptions.collectAsStateWithLifecycle()
+    val filterState by listViewModel.filterState.collectAsStateWithLifecycle()
+    val deleteState by listViewModel.deleteState.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()

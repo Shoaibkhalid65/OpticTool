@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +23,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -38,6 +36,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Panorama
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
@@ -89,7 +88,6 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -596,7 +594,7 @@ fun CustomerInfoCard(
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -622,26 +620,28 @@ fun CustomerInfoCard(
                 leadingIcon = { Icon(Icons.Default.Person, null) }
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = onPhoneChange,
-                    label = { Text("Phone *") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    leadingIcon = { Icon(Icons.Default.Phone, null) }
-                )
-                OutlinedTextField(
-                    value = city,
-                    onValueChange = onCityChange,
-                    label = { Text("City") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
+            OutlinedTextField(
+                value = phone,
+                onValueChange = onPhoneChange,
+                label = { Text("Phone *") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                leadingIcon = { Icon(Icons.Default.Phone, null) }
+            )
+
+            OutlinedTextField(
+                value = city,
+                onValueChange = onCityChange,
+                label = { Text("City") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                leadingIcon = { Icon(Icons.Default.LocationOn, null) }
+
+            )
         }
     }
 }
